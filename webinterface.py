@@ -12,9 +12,15 @@ from flask_security import Security, SQLAlchemyUserDatastore, \
 # Create app
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SECRET_KEY'] = 'super-secret'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///qbnotify.db'
 
+# this shouldn't be tracked by git
+# just put secret_key = '<SOME RANDOM BYTES>' in the file mysecrets.py
+import mysecrets
+app.config['SECRET_KEY'] = mysecrets.secret_key
+
+# not actually a cryptographic salt, so it doesn't matter if it's constant
+# this is because flask-security uses stupid naming
 app.config['SECURITY_PASSWORD_SALT'] = '00000'
 
 # Create database connection object

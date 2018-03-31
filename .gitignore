@@ -100,8 +100,14 @@ ENV/
 # mypy
 .mypy_cache/
 
-# other virtualenv stuff
 
+# other virtualenv stuff
 bin/
 include/
 pip-selfcheck.json
+
+# secure data
+mysecrets.py
+
+# sqlite databases
+*.db
