@@ -29,7 +29,7 @@ db = SQLAlchemy(app)
 # Define models
 col_user_id = db.Column('user_id', db.Integer(), db.ForeignKey('user.id'))
 col_role_id = db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
-roles_users = db.Table('roles_users', col_user_id, col_row_id)
+roles_users = db.Table('roles_users', col_user_id, col_role_id)
 
 class Role(db.Model, RoleMixin):
 	id = db.Column(db.Integer(), primary_key=True)
@@ -66,4 +66,5 @@ def home():
 	return render_template("home.html")
 
 if __name__ == '__main__':
+	# this is only for debugging; we'll be deploying via AWS
 	app.run()
