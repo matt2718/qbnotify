@@ -66,5 +66,5 @@ def home():
 	return render_template("home.html")
 
 if __name__ == '__main__':
-	# this is only for debugging; we'll be deploying via AWS
+	# this is only for debugging, not deployment
 	app.run()
