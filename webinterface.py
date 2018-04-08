@@ -123,7 +123,7 @@ def addCoord():
 		curNotes = Notification.query.filter_by(email=current_user.email)\
 		                             .order_by(Notification.id).all()
 		if curNotes: maxID = curNotes[-1].id
-		else: maxID = 0
+		else: maxID = -1
 
 		db.session.add(Notification(email=current_user.email, id=maxID + 1,
 		                            type='C', lat=lat, lon=lon, radius=radius))
@@ -140,7 +140,7 @@ def addState():
 		curNotes = Notification.query.filter_by(email=current_user.email)\
 		                             .order_by(Notification.id).all()
 		if curNotes: maxID = curNotes[-1].id
-		else: maxID = 0
+		else: maxID = -1
 
 		db.session.add(Notification(email=current_user.email, id=maxID + 1,
 		                            type='S', state=request.form['state']))
@@ -153,7 +153,11 @@ def addState():
 @login_required
 def delNote():
 	if request.form:
+		Notification.query.filter_by(email=current_user.email)\
+		                  .filter_by(id=request.form['id']).delete()
+		db.session.commit()
 		print("Deleting: " + request.form['id'])
+		
 	return redirect('/')
 
 if __name__ == '__main__':
