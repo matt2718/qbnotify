@@ -1,9 +1,35 @@
 <html>
   <body>
-    <form method="POST" action="/">
-      <input type="text" name="email">
-      <input type="text" name="password">
+
+    <h2>Add Notification:</h2>
+    Distance from point:
+    <form method="POST" action="/addCoord">
+      Latitude: <input type="text" name="lat">
+      Longitude: <input type="text" name="lon">
+      Radius: <input type="text" name="r">
       <input type="submit" value="Add">
     </form>
+
+    In state:
+    
+    <form method="POST" action="/addState">
+      <select name="state">
+	{% for state in states %}
+	<option value="{{ state }}">{{ state }}</option>
+	{% endfor %}
+      </select>
+      <input type="submit" value="Add">
+    </form>
+
+    <h2>Your Current Notifications:</h2>
+    
+    {% for note in curNotes %}
+    <form method="POST" action="/delNote">
+      <input type="submit" value="Delete">
+      <input type="hidden" name="id" value="{{ note.id }}">
+      {{ note.text }}
+    </form>
+    {% endfor %}
+
   </body>
 </html>
