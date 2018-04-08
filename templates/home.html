@@ -2,20 +2,19 @@
   <body>
 
     <h2>Add Notification:</h2>
-    Distance from point:
+    Circular region:
     <form method="POST" action="/addCoord">
       Latitude: <input type="text" name="lat">
       Longitude: <input type="text" name="lon">
-      Radius: <input type="text" name="r">
+      Radius (m): <input type="text" name="r">
       <input type="submit" value="Add">
     </form>
 
     In state:
-    
     <form method="POST" action="/addState">
       <select name="state">
 	{% for state in states %}
-	<option value="{{ state }}">{{ state }}</option>
+	<option value="{{state}}">{{state}}</option>
 	{% endfor %}
       </select>
       <input type="submit" value="Add">
@@ -26,8 +25,12 @@
     {% for note in curNotes %}
     <form method="POST" action="/delNote">
       <input type="submit" value="Delete">
-      <input type="hidden" name="id" value="{{ note.id }}">
-      {{ note.text }}
+      <input type="hidden" name="id" value="{{note.id}}">
+      {% if note.type == 'S' %}
+      Tournaments in {{note.state}}.
+      {% elif note.type == 'C' %}
+      Tournaments within {{note.radius}} m of ({{note.lat}}, {{note.lon}}).
+      {% endif %}
     </form>
     {% endfor %}
 

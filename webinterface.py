@@ -10,6 +10,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, login_required
 
+from flask_login import current_user
+
 states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
           "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
           "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
@@ -60,45 +62,93 @@ class User(db.Model, UserMixin):
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
-# create a user to test with
+############################################################
+
+class Notification(db.Model):
+	email = db.Column(db.String(255), primary_key=True)
+	id = db.Column(db.Integer(), primary_key=True)
+	type = db.Column(db.String(1))
+
+	lat = db.Column(db.Float(), nullable=True)
+	lon = db.Column(db.Float(), nullable=True)
+	radius = db.Column(db.Float(), nullable=True)
+
+	state = db.Column(db.String(16), nullable=True)
+	
+tmpnotes = [];
+
 @app.before_first_request
 def create_user():
 	db.create_all()
 	user_datastore.create_user(email='matt@coloradoqb.org', password='password')
+	db.session.add(Notification(email='matt@coloradoqb.org',
+	                            id=0,
+	                            type='S',
+	                            state='ID'))
+	db.session.add(Notification(email='matt@coloradoqb.org',
+	                            id=1,
+	                            type='C',
+	                            lat=40.008019,
+	                            lon=-105.267860,
+	                            radius=1000))
 	db.session.commit()
-
-############################################################
-class Notification:
-	def __init__(self, a, b):
-		self.id = a
-		self.text = b
-
-tmpnotes = [Notification(1, 'Message 1'),
-            Notification(2, 'Message 2'),
-            Notification(3, 'Message 3')]
-
+			
 # Views
 @app.route('/', methods=["GET", "POST"])
 @login_required
 def home():
-	return render_template("home.html", states=states, curNotes=tmpnotes)
+	noteList = Notification.query.filter_by(email='matt@coloradoqb.org')\
+	                             .order_by(Notification.id).all()
+	return render_template("home.html", states=states, curNotes=noteList)
 
+# new coordinate notification added
 @app.route('/addCoord', methods=["POST"])
 @login_required
 def addCoord():
 	if request.form:
-		print(request.form['lat'])
-		print(request.form['lon'])
-		print(request.form['r'])
+		# validate input
+		try:
+			lat = float(request.form['lat'])
+			lon = float(request.form['lon'])
+			radius = float(request.form['r'])
+
+		except ValueError:
+			return redirect('/')
+
+		# make sure the range is correct
+		if (lat < -90 or 90 < lat) or (lon < -180 or 180 < lon):
+			return redirect('/')
+
+		# get highest ID that user has
+		curNotes = Notification.query.filter_by(email=current_user.email)\
+		                             .order_by(Notification.id).all()
+		if curNotes: maxID = curNotes[-1].id
+		else: maxID = 0
+
+		db.session.add(Notification(email=current_user.email, id=maxID + 1,
+		                            type='C', lat=lat, lon=lon, radius=radius))
+		db.session.commit()
+		
 	return redirect('/')
 
+# new state notification added
 @app.route('/addState', methods=["POST"])
 @login_required
 def addState():
 	if request.form:
-		print(request.form['state'])
+		# get highest ID that user has
+		curNotes = Notification.query.filter_by(email=current_user.email)\
+		                             .order_by(Notification.id).all()
+		if curNotes: maxID = curNotes[-1].id
+		else: maxID = 0
+
+		db.session.add(Notification(email=current_user.email, id=maxID + 1,
+		                            type='S', state=request.form['state']))
+		db.session.commit()
+
 	return redirect('/')
 
+# notification deleted
 @app.route('/delNote', methods=["POST"])
 @login_required
 def delNote():
