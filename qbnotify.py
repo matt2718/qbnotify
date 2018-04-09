@@ -12,12 +12,13 @@ from flask_security import Security, SQLAlchemyUserDatastore, \
 
 from flask_login import current_user
 
+from flask_mail import Mail, Message
+
 states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
           "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
           "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
           "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
           "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
-
 
 # Create app
 app = Flask(__name__)
@@ -35,6 +36,26 @@ app.config['SECURITY_PASSWORD_SALT'] = '00000'
 
 # Create database connection object
 db = SQLAlchemy(app)
+
+# allow users to create accounts
+app.config['SECURITY_REGISTERABLE'] = True
+app.config['SECURITY_REGISTER_URL'] = '/create_account'
+
+# password reset
+app.config['SECURITY_RECOVERABLE'] = True
+
+# email setup
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_SSL'] = True
+
+# also from mysecrets.py
+# (username and sender will probably be the same unless we're forwarding)
+app.config['MAIL_USERNAME'] = mysecrets.mail_username
+app.config['MAIL_PASSWORD'] = mysecrets.mail_password
+app.config['MAIL_DEFAULT_SENDER'] = mysecrets.mail_sender
+app.config['SECURITY_EMAIL_SENDER'] = mysecrets.mail_sender
+mail = Mail(app)
 
 ############################################################
 # COPIED FROM FLASK-SECURITY QUICKSTART GUIDE
@@ -80,24 +101,13 @@ tmpnotes = [];
 @app.before_first_request
 def create_user():
 	db.create_all()
-	user_datastore.create_user(email='matt@coloradoqb.org', password='password')
-	db.session.add(Notification(email='matt@coloradoqb.org',
-	                            id=0,
-	                            type='S',
-	                            state='ID'))
-	db.session.add(Notification(email='matt@coloradoqb.org',
-	                            id=1,
-	                            type='C',
-	                            lat=40.008019,
-	                            lon=-105.267860,
-	                            radius=1000))
 	db.session.commit()
-			
+
 # Views
 @app.route('/', methods=["GET", "POST"])
 @login_required
 def home():
-	noteList = Notification.query.filter_by(email='matt@coloradoqb.org')\
+	noteList = Notification.query.filter_by(email=current_user.email)\
 	                             .order_by(Notification.id).all()
 	return render_template("home.html", states=states, curNotes=noteList)
 
