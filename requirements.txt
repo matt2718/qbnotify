@@ -1,4 +1,7 @@
+bcrypt
+bs4
 Flask
 Flask-Security
 Flask-SQLAlchemy
-bcrypt
+requests
+
