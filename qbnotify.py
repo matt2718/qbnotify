@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import math
+
 from flask import Flask
 from flask import render_template
 from flask import request
@@ -14,11 +16,30 @@ from flask_login import current_user
 
 from flask_mail import Mail, Message
 
-states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
-          "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-          "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-          "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-          "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
+import scraper
+import mysecrets
+from constants import states
+
+# finds great-circle distance between 2 points on a sphere
+# (Yes, I know the earth is an oblate spheroid, but I'm not going to implement
+#  the full Vincenty formula to give you <0.5% more accurate geodesics. It was
+#  hard enough making sure this was numerically well-conditioned. Just make your
+#  notifcation circle slightly larger if it matters to you.)
+def surfDist(r, latlon1, latlon2):
+	# convert to radians
+	lat1 = latlon1[0] * math.pi / 180
+	lon1 = latlon1[1] * math.pi / 180
+	lat2 = latlon2[0] * math.pi / 180
+	lon2 = latlon2[1] * math.pi / 180
+
+	# haversine formula
+	# (possibly not super well-conditioned for antipodes, but if you want to
+	#  notified exclusively about non-antipodal tournaments, you have bigger
+	#  problems)
+	tmp = math.sin((lat1 - lat2) / 2)**2 \
+	      + math.cos(lat1) * math.cos(lat2) * math.sin((lon1 - lon2) / 2)**2
+
+	return 2 * r * math.asin(math.sqrt(tmp))
 
 # Create app
 app = Flask(__name__)
@@ -27,7 +48,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///qbnotify.db'
 
 # this shouldn't be tracked by git
 # just put secret_key = '<SOME RANDOM BYTES>' in the file mysecrets.py
-import mysecrets
 app.config['SECRET_KEY'] = mysecrets.secret_key
 
 # not actually a cryptographic salt, so it doesn't matter if it's constant
@@ -104,15 +124,15 @@ def create_user():
 	db.session.commit()
 
 # Views
-@app.route('/', methods=["GET", "POST"])
+@app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
 	noteList = Notification.query.filter_by(email=current_user.email)\
 	                             .order_by(Notification.id).all()
-	return render_template("home.html", states=states, curNotes=noteList)
+	return render_template('home.html', states=states, curNotes=noteList)
 
 # new coordinate notification added
-@app.route('/addCoord', methods=["POST"])
+@app.route('/addCoord', methods=['POST'])
 @login_required
 def addCoord():
 	if request.form:
@@ -142,7 +162,7 @@ def addCoord():
 	return redirect('/')
 
 # new state notification added
-@app.route('/addState', methods=["POST"])
+@app.route('/addState', methods=['POST'])
 @login_required
 def addState():
 	if request.form:
@@ -159,15 +179,22 @@ def addState():
 	return redirect('/')
 
 # notification deleted
-@app.route('/delNote', methods=["POST"])
+@app.route('/delNote', methods=['POST'])
 @login_required
 def delNote():
 	if request.form:
 		Notification.query.filter_by(email=current_user.email)\
 		                  .filter_by(id=request.form['id']).delete()
 		db.session.commit()
-		print("Deleting: " + request.form['id'])
+		print('Deleting: ' + request.form['id'])
 		
+	return redirect('/')
+
+# test method for notifying people
+@app.route('/sn', methods=['GET'])
+@login_required
+def scrapeAndNotify():
+	scraper.getAllTournaments(start=4900, end=4950)
 	return redirect('/')
 
 if __name__ == '__main__':

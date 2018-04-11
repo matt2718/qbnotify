@@ -14,7 +14,7 @@
     <form method="POST" action="/addState">
       <select name="state">
 	{% for state in states %}
-	<option value="{{state}}">{{state}}</option>
+	<option value="{{state[1]}}">{{state[0]}}</option>
 	{% endfor %}
       </select>
       <input type="submit" value="Add">

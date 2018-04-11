@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import datetime
 import json
 import math
 import re
@@ -9,8 +10,10 @@ import sys
 from bs4 import BeautifulSoup
 
 import mysecrets
+from constants import states
 
 def geocode(address):
+	print('LOG: Google maps query: ' + address)
 	baseURL = 'https://maps.googleapis.com/maps/api/geocode/json'
 	reqURL = baseURL\
 	         + '?address=' + address.replace(' ', '+')\
@@ -19,20 +22,55 @@ def geocode(address):
 	# do query and check for errors
 	resp = requests.get(reqURL)
 	if resp.status_code != 200:
-		print('GEOCODING ERROR: HTTP status code ' + str(resp.status_code))
+		print('ERROR: GEOCODING HTTP status code ' + str(resp.status_code))
 		print('(Query was ' + reqURL + ')')
 		return None
 
 	# make sure geocoding was succesful
 	retObj = json.loads(resp.text)
 	if retObj['status'] != 'OK':
-		print('GEOCODING ERROR: API returned ' + retObj['status'])
+		print('ERROR: GEOCODING API returned ' + retObj['status'])
 		print('(Query was ' + reqURL + ')')
 		return None
 
+	# get coordinates
 	location = retObj['results'][0]['geometry']['location']
-	return (location['lat'], location['lng'])
 
+	# get country and state/province
+	addrParts = retObj['results'][0]['address_components'] 
+	country = [x for x in addrParts
+	           if x['types'][0]=='country'][0]['short_name']
+
+	if country == 'GB':
+		# states not necessary for british tournaments
+		place = 'UK'
+	elif country == 'US' or country == 'CA':
+		# get state
+		for x in addrParts:
+			if x['types'][0]=='administrative_area_level_1':
+				place = x['short_name']
+				break
+	else:
+		place = 'other'
+	
+	return [location['lat'], location['lng'], place]
+
+# try to extract state from address
+def addr2state(address):
+	# iterate backwards though address words, searching for a place
+	# we need to start at the end because state abbreivations might
+	# appear in place names (statford ON avon)
+	asplit = address.lower().split()
+	asplit.reverse()
+	for word in asplit:
+		for state in states:
+			if word == state[0].lower() or word == state[1].lower():
+				return state[1]
+
+	# nothing found
+	return ''
+
+# gets info for a specific tournament in HSQB's database
 def getTournament(tid):
 	resp = requests.get('http://hsquizbowl.org/db/tournaments/' + str(tid))
 	if resp.status_code != 200:
@@ -45,63 +83,138 @@ def getTournament(tid):
 
 	# tournament does not exist
 	if soup.select_one('.FBError'):
+		print('LOG: tournament ' + str(tid) + ' does not exist')
 		return None
 
 	# tournament name is in first h2 in heading
 	tname = soup.select_one('.MultilineHeading h2').text
 
-	# $LEVEL tournament on $DATE
+	# date is formatted as $LEVEL tournament on $DATE
 	ldate = soup.select_one('.MultilineHeading h5').text
-	[level, datestr] = ldate.split(' tournament on ')
+	datesplit = ldate.split(' tournament on ')
+	if len(datesplit) < 2:
+		# not listed, we can't use this
+		print('WARNING: level or date not listed for tournament '\
+		      + str(tid) + '; ignoring')
+		return None
+	[level, datestr] = datesplit
 
-	# get location
+	# account for multiple days
+	datestr = datestr.split(' - ')[0]
+	datestr = re.sub(r'-[0-9][0-9]', '', datestr)
+
+	# check if date string was 'Month DD - Month DD YYYY', and append year
+	if re.match(r'[A-Z][a-z]* [0-9][0-9]$', datestr):
+		datestr += datesplit[1][-6:]
+
+	# get address, if present
+	fnames = soup.select('.FieldName')
+	addrs = [f.parent for f in fnames if f.text == 'Address:']
+	locs = [f.parent for f in fnames if f.text == 'Host location:']
+	if addrs:
+		# has an 'Address' field
+		addr = addrs[0].text.replace('Address: ', '')
+
+	elif locs:
+		# otherwise, we use the 'Host location' field
+		addr = locs[0].text.replace('Host location: ', '')
+
+		# ignore tournaments without fixed dates
+		if addr.lower() in ['tba', 'to be announced', 'undetermined',
+		                    'unknown']:
+			print('WARNING: the location of tournament ' + str(tid)\
+			      + ' is TBA; ignoring')
+			return None
+		
+		# ignore tournaments in multiple locations
+		if addr.lower() in ['various', 'multiple']:
+			print('WARNING: tournament ' + str(tid)\
+			      + ' is in multiple locations; ignoring')
+			return None
+
+		# ignore online tournaments
+		if addr.lower() in ['internet', 'the internet', 'online', 'cloud',
+		                    'the cloud', 'skype', 'discord']:
+			print('LOG: tournament ' + str(tid) + ' is online; ignoring')
+			return None
+	else:
+		addr = ''
+	
+	# check if coordinates are listed
 	respGPX = requests.get('http://hsquizbowl.org/db/tournaments/'\
 	                       + str(tid) + '/gpx')
 	soupGPX = BeautifulSoup(respGPX.text)
 	
 	wpt = soupGPX.select_one('wpt')
+
 	if wpt:
+		# we have coordinates!
 		lat = wpt['lat']
 		lon = wpt['lon']
+		place = addr2state(addr)
+
+		# if no state is mentioned in address, see if we can geocode it
+		# we try this last to conserve API queries
+		if not place:
+			place = geocode(str(lat) + ', ' + str(lon))[2]
+
 	else:
 		# no GPX data found, let's geocode it ourselves
-		fnames = soup.select('.FieldName')
-		addrs = [f.parent for f in fnames if f.text == 'Address:']
-		locs = [f.parent for f in fnames if f.text == 'Host location:']
-		if addrs:
-			# has an 'Address' field
-			addr = addrs[0].text.lstrip('Address: ')
-		elif locs:
-			# otherwise, we use the 'Host location' field
-			addr = locs[0].text.lstrip('Address: ')
-		else:
+		if not addr:
 			# no location, this tournament is useless to us
+			print('WARNING: location not available for tournament '\
+			      + str(tid) + '; ignoring')
 			return None
 		
 		# we now have an address string, which we can try to geocode
-		coords = geocode(addr)
-		if coords:
-			[lat, lon] = coords
+		location = geocode(addr)
+		if location:
+			[lat, lon, place] = location
 		else:
 			# geocoding failed, we can't find the location
+			print('WARNING: geocoding failed for tournament '\
+			      + str(tid) + '; ignoring')
 			return None
 
-	return [tname, datestr, level, lat, lon]
+	try:
+		tdate = datetime.datetime.strptime(datestr, '%B %d, %Y')
+	except ValueError:
+		print('WARNING: malformed date for tournament ' + str(tid)\
+		      + '; ignoring')
+		return None
+		
+	return {'name' : tname,
+	        'date' : tdate,
+	        'level' : level[0],
+	        'state' : place,
+	        'position' : (lat, lon)}
 
-def getAllTournaments(last=0):
+def getAllTournaments(start=1, end=1000000000):
 	resp = requests.get('http://hsquizbowl.org/db/tournaments/dbstats.php')
 	if resp.status_code != 200:
 		print('ERROR: could not get DB stats from HSQB. HTTP status code '\
 		      + str(resp.status_code))
 		return []
-	
+
 	maxID = int(re.search(r'(?<=max=)[0-9]+', resp.text)[0])
 	allInfo = []
 	
-	for x in range(last+1, maxID+1):
-		info = getTournament(x)
-		if info: allInfo.append(info)
+	for tid in range(max(start,1), min(end,maxID) + 1):
+		try:
+			info = getTournament(tid)
+		except KeyboardInterrupt:
+			# user pressed ctrl-C, exit immediately
+			raise
+		except:
+			print('ERROR: parser failed on tournament ' + str(tid))
+		else:
+			if info:
+				print('LOG: got tournament ' + str(tid))
+				allInfo.append(info)
 
 	return allInfo
+if __name__ == '__main__':
+	for t in getAllTournaments(start=4900, end=4950):
+		print(t['level'] + ': ' + t['name'] + ' | ' + str(t['date']))
+		print('   ' + t['state'] + ' ' + str(t['position']))
 
-print(getAllTournaments(5050))
