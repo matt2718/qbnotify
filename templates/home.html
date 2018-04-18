@@ -1,36 +1,68 @@
 <html>
   <body>
-
-    <h2>Add Notification:</h2>
-    Circular region:
+    You are logged in as {{email}} .
+    <br />
+    Click <a href="/logout">here</a> to log out.
+    <hr />
+    <h2>Add Notification (circular region):</h2>
     <form method="POST" action="/addCoord">
+      Notify me of all
+      <br />
+      <br />
+      <input type="checkbox" name="level" value="ms"> Middle School
+      <input type="checkbox" name="level" value="hs"> High School
+      <input type="checkbox" name="level" value="college"> College
+      <input type="checkbox" name="level" value="open"> Open
+      <input type="checkbox" name="level" value="trash"> Trash
+      <br />
+      <br />
+      tournaments within <input type="text" name="r"> meters of the following location:
+      <br />
+      <br />
       Latitude: <input type="text" name="lat">
+      <br />
       Longitude: <input type="text" name="lon">
-      Radius (m): <input type="text" name="r">
+      <br />
+      <br />
       <input type="submit" value="Add">
     </form>
 
-    In state:
+    <hr />
+
     <form method="POST" action="/addState">
+      <h2>Add Notification (state or provice):</h2>
+      Notify me of all
+      <br />
+      <br />
+      <input type="checkbox" name="level" value="ms"> Middle School
+      <input type="checkbox" name="level" value="hs"> High School
+      <input type="checkbox" name="level" value="college"> College
+      <input type="checkbox" name="level" value="open"> Open
+      <input type="checkbox" name="level" value="trash"> Trash
+      <br />
+      <br />
+      tournaments in
+      <br />
+      <br />
       <select name="state">
 	{% for state in states %}
 	<option value="{{state[1]}}">{{state[0]}}</option>
 	{% endfor %}
-      </select>
+      </select> ("UK" and "other" also available)
+      <br />
+      <br />
       <input type="submit" value="Add">
     </form>
 
+    <hr />
+    
     <h2>Your Current Notifications:</h2>
     
     {% for note in curNotes %}
     <form method="POST" action="/delNote">
       <input type="submit" value="Delete">
       <input type="hidden" name="id" value="{{note.id}}">
-      {% if note.type == 'S' %}
-      Tournaments in {{note.state}}.
-      {% elif note.type == 'C' %}
-      Tournaments within {{note.radius}} m of ({{note.lat}}, {{note.lon}}).
-      {% endif %}
+      {{note}}
     </form>
     {% endfor %}
 

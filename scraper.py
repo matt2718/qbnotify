@@ -213,8 +213,8 @@ def getAllTournaments(start=1, end=1000000000):
 				allInfo.append(info)
 
 	return allInfo
+
 if __name__ == '__main__':
 	for t in getAllTournaments(start=4900, end=4950):
 		print(t['level'] + ': ' + t['name'] + ' | ' + str(t['date']))
 		print('   ' + t['state'] + ' ' + str(t['position']))
-

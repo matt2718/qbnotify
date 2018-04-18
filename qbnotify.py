@@ -109,13 +109,43 @@ class Notification(db.Model):
 	email = db.Column(db.String(255), primary_key=True)
 	id = db.Column(db.Integer(), primary_key=True)
 	type = db.Column(db.String(1))
-
+	diff_ms = db.Column(db.Boolean())
+	diff_hs = db.Column(db.Boolean())
+	diff_college = db.Column(db.Boolean())
+	diff_open = db.Column(db.Boolean())
+	diff_trash = db.Column(db.Boolean())
+	
 	lat = db.Column(db.Float(), nullable=True)
 	lon = db.Column(db.Float(), nullable=True)
 	radius = db.Column(db.Float(), nullable=True)
 
 	state = db.Column(db.String(16), nullable=True)
-	
+
+	def __str__(self):
+		# get representation
+		diffs = []
+		if self.diff_ms:      diffs.append('MS')
+		if self.diff_hs:      diffs.append('HS')
+		if self.diff_college: diffs.append('College')
+		if self.diff_open:    diffs.append('Open')
+		if self.diff_trash:   diffs.append('Trash')
+
+		# multiple elements require an 'and'
+		if len(diffs) > 1: diffs[-1] = 'and ' + diffs[-1]
+		
+		# commas for more than 2
+		if len(diffs) > 2: diffstr = ', '.join(diffs)
+		else: diffstr = ' '.join(diffs)
+
+		if self.type == 'S':
+			return diffstr + ' tournaments in ' + self.state
+		elif self.type == 'C':
+			return diffstr + ' tournaments within '\
+				+ str(self.radius) + ' m of '\
+				+ '(' + str(self.lat) + ',' + str(self.lon) + ')'
+		
+		return ''
+		
 tmpnotes = [];
 
 @app.before_first_request
@@ -129,7 +159,11 @@ def create_user():
 def home():
 	noteList = Notification.query.filter_by(email=current_user.email)\
 	                             .order_by(Notification.id).all()
-	return render_template('home.html', states=states, curNotes=noteList)
+	
+	return render_template('home.html',
+	                       states=states,
+	                       curNotes=noteList,
+	                       email=current_user.email)
 
 # new coordinate notification added
 @app.route('/addCoord', methods=['POST'])
@@ -155,8 +189,17 @@ def addCoord():
 		if curNotes: maxID = curNotes[-1].id
 		else: maxID = -1
 
-		db.session.add(Notification(email=current_user.email, id=maxID + 1,
-		                            type='C', lat=lat, lon=lon, radius=radius))
+		newNote = Notification(email=current_user.email, id=maxID + 1,
+		                       type='C', lat=lat, lon=lon, radius=radius)
+
+		levels = request.form.getlist('level')
+		newNote.diff_ms      = ('ms' in levels)
+		newNote.diff_hs      = ('hs' in levels)
+		newNote.diff_college = ('college' in levels)
+		newNote.diff_open    = ('open' in levels)
+		newNote.diff_trash   = ('trash' in levels)
+
+		db.session.add(newNote)
 		db.session.commit()
 		
 	return redirect('/')
@@ -172,8 +215,17 @@ def addState():
 		if curNotes: maxID = curNotes[-1].id
 		else: maxID = -1
 
-		db.session.add(Notification(email=current_user.email, id=maxID + 1,
-		                            type='S', state=request.form['state']))
+		newNote = Notification(email=current_user.email, id=maxID + 1,
+		                       type='S', state=request.form['state'])
+		
+		levels = request.form.getlist('level')
+		newNote.diff_ms      = ('ms' in levels)
+		newNote.diff_hs      = ('hs' in levels)
+		newNote.diff_college = ('college' in levels)
+		newNote.diff_open    = ('open' in levels)
+		newNote.diff_trash   = ('trash' in levels)
+
+		db.session.add(newNote)
 		db.session.commit()
 
 	return redirect('/')
@@ -186,7 +238,6 @@ def delNote():
 		Notification.query.filter_by(email=current_user.email)\
 		                  .filter_by(id=request.form['id']).delete()
 		db.session.commit()
-		print('Deleting: ' + request.form['id'])
 		
 	return redirect('/')
 
