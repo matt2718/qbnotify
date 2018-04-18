@@ -1,16 +1,24 @@
 #!/usr/bin/python3
 
-import datetime
 import json
 import math
 import re
 import requests
 import sys
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 
 import mysecrets
 from constants import states
+
+class Tournament:
+	name = None
+	date = None
+	level = None
+	state = None
+	position = None
+	id = None
 
 def geocode(address):
 	print('LOG: Google maps query: ' + address)
@@ -72,6 +80,9 @@ def addr2state(address):
 
 # gets info for a specific tournament in HSQB's database
 def getTournament(tid):
+	tourney = Tournament()
+	tourney.id = tid
+	
 	resp = requests.get('http://hsquizbowl.org/db/tournaments/' + str(tid))
 	if resp.status_code != 200:
 		print('ERROR: could not get tournament ' + str(tid)\
@@ -87,7 +98,7 @@ def getTournament(tid):
 		return None
 
 	# tournament name is in first h2 in heading
-	tname = soup.select_one('.MultilineHeading h2').text
+	tourney.name = soup.select_one('.MultilineHeading h2').text
 
 	# date is formatted as $LEVEL tournament on $DATE
 	ldate = soup.select_one('.MultilineHeading h5').text
@@ -98,6 +109,8 @@ def getTournament(tid):
 		      + str(tid) + '; ignoring')
 		return None
 	[level, datestr] = datesplit
+
+	tourney.level = level[0]
 
 	# account for multiple days
 	datestr = datestr.split(' - ')[0]
@@ -176,18 +189,18 @@ def getTournament(tid):
 			      + str(tid) + '; ignoring')
 			return None
 
+	tourney.state = place
+	tourney.position = (float(lat), float(lon))
+
+	# get date
 	try:
-		tdate = datetime.datetime.strptime(datestr, '%B %d, %Y')
+		tourney.date = datetime.strptime(datestr, '%B %d, %Y')
 	except ValueError:
 		print('WARNING: malformed date for tournament ' + str(tid)\
 		      + '; ignoring')
 		return None
 		
-	return {'name' : tname,
-	        'date' : tdate,
-	        'level' : level[0],
-	        'state' : place,
-	        'position' : (lat, lon)}
+	return tourney
 
 def getAllTournaments(start=1, end=1000000000):
 	resp = requests.get('http://hsquizbowl.org/db/tournaments/dbstats.php')
@@ -216,5 +229,9 @@ def getAllTournaments(start=1, end=1000000000):
 
 if __name__ == '__main__':
 	for t in getAllTournaments(start=4900, end=4950):
-		print(t['level'] + ': ' + t['name'] + ' | ' + str(t['date']))
-		print('   ' + t['state'] + ' ' + str(t['position']))
+		print(t.level + ': ' + t.name + ' | ' + str(t.date))
+		print('   ' + t.state + ' ' + str(t.position))
+
+
+
+

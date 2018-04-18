@@ -1,11 +1,10 @@
 #!/usr/bin/python3
 
 import math
+import html
+from datetime import datetime, timedelta
 
-from flask import Flask
-from flask import render_template
-from flask import request
-from flask import redirect
+from flask import Flask, render_template, request, redirect, Response
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -122,7 +121,7 @@ class Notification(db.Model):
 	state = db.Column(db.String(16), nullable=True)
 
 	def __str__(self):
-		# get representation
+		# get tournament levels
 		diffs = []
 		if self.diff_ms:      diffs.append('MS')
 		if self.diff_hs:      diffs.append('HS')
@@ -142,7 +141,7 @@ class Notification(db.Model):
 		elif self.type == 'C':
 			return diffstr + ' tournaments within '\
 				+ str(self.radius) + ' m of '\
-				+ '(' + str(self.lat) + ',' + str(self.lon) + ')'
+				+ '(' + str(self.lat) + ', ' + str(self.lon) + ')'
 		
 		return ''
 		
@@ -241,12 +240,101 @@ def delNote():
 		
 	return redirect('/')
 
-# test method for notifying people
-@app.route('/sn', methods=['GET'])
+# checks if the notification applies to difficulty of tournament
+def checkDifficulty(tournament, notification):
+	return (tournament.level == 'M' and notification.diff_ms) \
+		or (tournament.level == 'H' and notification.diff_hs) \
+		or (tournament.level == 'C' and notification.diff_college) \
+		or (tournament.level == 'O' and notification.diff_open) \
+		or (tournament.level == 'T' and notification.diff_trash)
+
+# get new tournaments and notify people
+@app.route('/sn/', methods=['GET'])
 @login_required
 def scrapeAndNotify():
-	scraper.getAllTournaments(start=4900, end=4950)
-	return redirect('/')
+	# validate query string
+	if 'key' not in request.args:
+		return Response('ERROR: no key', mimetype='text/plain'), 400
+	
+	if 'start' not in request.args:
+		return Response('ERROR: no start index', mimetype='text/plain'), 400
+	
+	if request.args['key'] != mysecrets.admin_key:
+		return Response('ERROR: bad key', mimetype='text/plain'), 401
+
+	try:
+		start = int(request.args['start'])
+	except ValueError:
+		return Response('ERROR: start must be an integer',
+		                mimetype='text/plain'), 403
+
+	# have we provided an ending point?
+	if 'end' in request.args:
+		try:
+			end = int(request.args['end'])
+		except ValueError:
+			return Response('ERROR: end must be an integer',
+		                mimetype='text/plain'), 403
+	else:
+		end = 1000000000
+
+	# get tournaments and setup email list
+	tournaments = scraper.getAllTournaments(start=start, end=end)
+	toSend = {}
+
+	today = datetime.today()
+	
+	# get area notifications
+	circNotes = Notification.query.filter_by(type='C').all()
+	
+	# The area checking has bad complexity, but it's a cheap operation done
+	# relatively few times and I'm not going to implement a complicated
+	# spatial partitioning scheme to save time in the unlikely case that
+	# thousands of tournaments are announced in a day. If that happens, the
+	# state of quizbowl will be so amazing that I won't mind rewriting it.
+	
+	for tourney in tournaments:
+		# handle state notification first
+		stateNotes = Notification.query.filter_by(state=tourney.state).all()
+		for note in stateNotes:
+			if checkDifficulty(tourney, note) and tourney.date > today:
+				# correct difficulty and in the future; add tournament
+				if note.email not in toSend: toSend[note.email] = set()
+				toSend[note.email].add(tourney)
+
+		# handle area notifications
+		for note in circNotes:
+			coord1 = (note.lat, note.lon)
+			coord2 = tourney.position
+			if checkDifficulty(tourney, note) and tourney.date > today \
+			   and surfDist(6371008.8, coord1, coord2) < note.radius:
+				# correct difficlty, in the future, and within range
+				if note.email not in toSend: toSend[note.email] = set()
+				toSend[note.email].add(tourney)
+
+	# time to actually send the emails
+	subj = 'You have new quizbowl tournament notifications'
+	baseURL = 'http://hsquizbowl.org/db/tournaments/'
+	# optimize for batch sending
+	with mail.connect() as conn:
+		for email in toSend:
+			content = 'The following tournaments have recently been '\
+			          'posted to the hsquizbowl.org database:'
+
+			for tourney in toSend[email]:
+				content += '<br />'
+				content += '<a href="' + baseURL + str(tourney.id) + '">'
+				content += html.escape(tourney.name)
+				content += '</a> on '
+				content += tourney.date.isoformat().split('T')[0]
+			print(content)
+			msg = Message(recipients=[email],
+			              html=content,
+			              subject=subj)
+			conn.send(msg)
+
+	# notify client of the last tournament ID so we know where to resume
+	return Response(str(tournaments[-1].id), mimetype='text/plain')
 
 if __name__ == '__main__':
 	# this is only for debugging, not deployment
