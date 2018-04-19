@@ -209,7 +209,7 @@ def getAllTournaments(start=1, end=1000000000):
 		      + str(resp.status_code))
 		return []
 
-	maxID = int(re.search(r'(?<=max=)[0-9]+', resp.text)[0])
+	maxID = int(re.search(r'(?<=max=)[0-9]+', resp.text).group(0))
 	allInfo = []
 	
 	for tid in range(max(start,1), min(end,maxID) + 1):
@@ -231,7 +231,3 @@ if __name__ == '__main__':
 	for t in getAllTournaments(start=4900, end=4950):
 		print(t.level + ': ' + t.name + ' | ' + str(t.date))
 		print('   ' + t.state + ' ' + str(t.position))
-
-
-
-

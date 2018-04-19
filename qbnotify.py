@@ -42,7 +42,8 @@ def surfDist(r, latlon1, latlon2):
 
 # Create app
 app = Flask(__name__)
-app.config['DEBUG'] = True
+app.config['DEBUG'] = False
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///qbnotify.db'
 
 # this shouldn't be tracked by git
@@ -191,7 +192,10 @@ def addCoord():
 		newNote = Notification(email=current_user.email, id=maxID + 1,
 		                       type='C', lat=lat, lon=lon, radius=radius)
 
+		# check which difficulties the person has chosen
 		levels = request.form.getlist('level')
+		if not levels: return redirect('/')
+
 		newNote.diff_ms      = ('ms' in levels)
 		newNote.diff_hs      = ('hs' in levels)
 		newNote.diff_college = ('college' in levels)
@@ -217,7 +221,10 @@ def addState():
 		newNote = Notification(email=current_user.email, id=maxID + 1,
 		                       type='S', state=request.form['state'])
 		
+		# check which difficulties the person has chosen
 		levels = request.form.getlist('level')
+		if not levels: return redirect('/')
+
 		newNote.diff_ms      = ('ms' in levels)
 		newNote.diff_hs      = ('hs' in levels)
 		newNote.diff_college = ('college' in levels)
@@ -250,7 +257,6 @@ def checkDifficulty(tournament, notification):
 
 # get new tournaments and notify people
 @app.route('/sn/', methods=['GET'])
-@login_required
 def scrapeAndNotify():
 	# validate query string
 	if 'key' not in request.args:
@@ -282,6 +288,10 @@ def scrapeAndNotify():
 	tournaments = scraper.getAllTournaments(start=start, end=end)
 	toSend = {}
 
+	# if no new tournaments are present, return start-1
+	if not tournaments:
+		return Response(str(start-1), mimetype='text/plain')
+	
 	today = datetime.today()
 	
 	# get area notifications
@@ -319,7 +329,7 @@ def scrapeAndNotify():
 	with mail.connect() as conn:
 		for email in toSend:
 			content = 'The following tournaments have recently been '\
-			          'posted to the hsquizbowl.org database:'
+			          'posted to the hsquizbowl.org database:<br />'
 
 			for tourney in toSend[email]:
 				content += '<br />'
@@ -327,11 +337,18 @@ def scrapeAndNotify():
 				content += html.escape(tourney.name)
 				content += '</a> on '
 				content += tourney.date.isoformat().split('T')[0]
-			print(content)
+
+			content += '<br /><br />'
+			content += 'You can edit your notification settings at '
+			content += '<a href="https://qbnotify.msmitchell.org">'
+			content += 'qbnotify.msmitchell.org'
+			content += '</a>.'
+			
 			msg = Message(recipients=[email],
 			              html=content,
 			              subject=subj)
 			conn.send(msg)
+			print('LOG: notified user ' + email)
 
 	# notify client of the last tournament ID so we know where to resume
 	return Response(str(tournaments[-1].id), mimetype='text/plain')

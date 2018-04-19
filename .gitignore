@@ -104,6 +104,7 @@ ENV/
 # other virtualenv stuff
 bin/
 include/
+share/
 pip-selfcheck.json
 
 # secure data
@@ -111,3 +112,6 @@ mysecrets.py
 
 # sqlite databases
 *.db
+
+# record of tournament requests
+lastID
