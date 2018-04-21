@@ -3,5 +3,6 @@ bs4
 Flask
 Flask-Security
 Flask-SQLAlchemy
+gevent
 gunicorn
 requests

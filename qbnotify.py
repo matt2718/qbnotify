@@ -306,7 +306,7 @@ def scrapeAndNotify(start, end):
 	subj = 'You have new quizbowl tournament notifications'
 	baseURL = 'http://hsquizbowl.org/db/tournaments/'
 	# optimize for batch sending
-	with mail.connect() as conn:
+	with app.app_context(), mail.connect() as conn:
 		for email in toSend:
 			content = 'The following tournaments have recently been '\
 			          'posted to the hsquizbowl.org database:<br />'
