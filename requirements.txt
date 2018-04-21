@@ -3,5 +3,5 @@ bs4
 Flask
 Flask-Security
 Flask-SQLAlchemy
+gunicorn
 requests
-

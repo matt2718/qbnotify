@@ -18,20 +18,21 @@ except ValueError:
 # tell server to parse tournaments and notify people
 qstring  = '?key=' + mysecrets.admin_key
 qstring += '&start=' + str(last + 1)
-resp = requests.get('https://qbnotify.msmitchell.org/sn' + qstring)
+resp = requests.get('http://localhost:8000/sn' + qstring)
 
 # validate response
 if resp.status_code != 200:
 	print('ERROR: server returned status code ' + str(resp.status_code))
 	quit(1)
 
+newlast = resp.text.split()[-1]
 try:
-	int(resp.text)
+	int(newlast)
 except ValueError:
 	print('ERROR: server did not return an integer value')
 	quit(1)
 
 # record last tournament parsed
 f = open('lastID', 'w')
-f.write(resp.text + '\n')
+f.write(newlast + '\n')
 f.close()

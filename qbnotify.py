@@ -256,41 +256,21 @@ def checkDifficulty(tournament, notification):
 		or (tournament.level == 'T' and notification.diff_trash)
 
 # get new tournaments and notify people
-@app.route('/sn/', methods=['GET'])
-def scrapeAndNotify():
-	# validate query string
-	if 'key' not in request.args:
-		return Response('ERROR: no key', mimetype='text/plain'), 400
-	
-	if 'start' not in request.args:
-		return Response('ERROR: no start index', mimetype='text/plain'), 400
-	
-	if request.args['key'] != mysecrets.admin_key:
-		return Response('ERROR: bad key', mimetype='text/plain'), 401
-
-	try:
-		start = int(request.args['start'])
-	except ValueError:
-		return Response('ERROR: start must be an integer',
-		                mimetype='text/plain'), 403
-
-	# have we provided an ending point?
-	if 'end' in request.args:
-		try:
-			end = int(request.args['end'])
-		except ValueError:
-			return Response('ERROR: end must be an integer',
-		                mimetype='text/plain'), 403
-	else:
-		end = 1000000000
-
+# this will be called by snFrontend because it's a generator
+def scrapeAndNotify(start, end):
 	# get tournaments and setup email list
-	tournaments = scraper.getAllTournaments(start=start, end=end)
+	tournaments = []
+	for t in scraper.getAllTournaments(start=start, end=end):
+		tournaments.append(t)
+		yield str(t.id) + '\n'
 	toSend = {}
 
 	# if no new tournaments are present, return start-1
 	if not tournaments:
-		return Response(str(start-1), mimetype='text/plain')
+		# client gets a list of tournament IDs
+		# we stream to prevent gunicorn from timing out
+		yield str(start-1)
+		return
 	
 	today = datetime.today()
 	
@@ -350,8 +330,35 @@ def scrapeAndNotify():
 			conn.send(msg)
 			print('LOG: notified user ' + email)
 
-	# notify client of the last tournament ID so we know where to resume
-	return Response(str(tournaments[-1].id), mimetype='text/plain')
+@app.route('/sn/', methods=['GET'])
+def snFrontend():
+	# validate query string
+	if 'key' not in request.args:
+		return Response('ERROR: no key', mimetype='text/plain'), 400
+	
+	if 'start' not in request.args:
+		return Response('ERROR: no start index', mimetype='text/plain'), 400
+	
+	if request.args['key'] != mysecrets.admin_key:
+		return Response('ERROR: bad key', mimetype='text/plain'), 401
+
+	try:
+		start = int(request.args['start'])
+	except ValueError:
+		return Response('ERROR: start must be an integer',
+		                mimetype='text/plain'), 403
+
+	# have we provided an ending point?
+	if 'end' in request.args:
+		try:
+			end = int(request.args['end'])
+		except ValueError:
+			return Response('ERROR: end must be an integer',
+		                mimetype='text/plain'), 403
+	else:
+		end = 1000000000
+
+	return Response(scrapeAndNotify(start, end), mimetype='text/plain')
 
 if __name__ == '__main__':
 	# this is only for debugging, not deployment
