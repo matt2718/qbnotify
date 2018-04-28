@@ -4,7 +4,8 @@ import math
 import html
 from datetime import datetime, timedelta
 
-from flask import Flask, render_template, request, redirect, Response
+from flask import Flask, render_template, request, redirect, Response, \
+	send_from_directory
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -359,6 +360,23 @@ def snFrontend():
 		end = 1000000000
 
 	return Response(scrapeAndNotify(start, end), mimetype='text/plain')
+
+# some browsers expect favicons to be at the site root
+import os
+
+@app.route('/favicon.ico')
+def favicon():
+	return send_from_directory(
+		os.path.join(app.root_path, 'static'),
+		'favicon.ico',
+		mimetype='image/vnd.microsoft.icon')
+
+@app.route('/browserconfig.xml')
+def browserconfig():
+	return send_from_directory(
+		os.path.join(app.root_path, 'static'),
+		'browserconfig.xml',
+		mimetype='application/xml')
 
 if __name__ == '__main__':
 	# this is only for debugging, not deployment
