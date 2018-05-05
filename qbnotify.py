@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 import math
 import html
 from datetime import datetime, timedelta
@@ -361,9 +362,15 @@ def snFrontend():
 
 	return Response(scrapeAndNotify(start, end), mimetype='text/plain')
 
-# some browsers expect favicons to be at the site root
-import os
+# certain static files
+@app.route('/robots.txt')
+def robotstxt():
+	return send_from_directory(
+		os.path.join(app.root_path, 'static'),
+		'robots.txt',
+		mimetype='text/plain')	
 
+# some browsers expect favicons to be at the site root
 @app.route('/favicon.ico')
 def favicon():
 	return send_from_directory(
