@@ -120,6 +120,7 @@ class Notification(db.Model):
 	lat = db.Column(db.Float(), nullable=True)
 	lon = db.Column(db.Float(), nullable=True)
 	radius = db.Column(db.Float(), nullable=True)
+	unit = db.Column(db.String(8), nullable=True)
 
 	state = db.Column(db.String(16), nullable=True)
 
@@ -143,7 +144,7 @@ class Notification(db.Model):
 			return diffstr + ' tournaments in ' + self.state
 		elif self.type == 'C':
 			return diffstr + ' tournaments within '\
-				+ str(self.radius) + ' m of '\
+				+ str(self.radius) + ' ' + str(self.unit) + ' of '\
 				+ '(' + str(self.lat) + ', ' + str(self.lon) + ')'
 		
 		return ''
@@ -177,6 +178,7 @@ def addCoord():
 			lat = float(request.form['lat'])
 			lon = float(request.form['lon'])
 			radius = float(request.form['r'])
+			unit = request.form['unit']
 
 		except ValueError:
 			return redirect('/')
@@ -192,7 +194,8 @@ def addCoord():
 		else: maxID = -1
 
 		newNote = Notification(email=current_user.email, id=maxID + 1,
-		                       type='C', lat=lat, lon=lon, radius=radius)
+		                       type='C',
+		                       lat=lat, lon=lon, radius=radius, unit=unit)
 
 		# check which difficulties the person has chosen
 		levels = request.form.getlist('level')
@@ -298,8 +301,15 @@ def scrapeAndNotify(start, end):
 		for note in circNotes:
 			coord1 = (note.lat, note.lon)
 			coord2 = tourney.position
+
+			# must use meters for radius
+			if note.unit == 'mi': radius_m = note.radius * 1609.3
+			elif note.unit == 'ft': radius_m = note.radius * 0.3048
+			elif note.unit == 'km': radius_m = note.radius * 1000.0
+			else: radius_m = note.radius
+
 			if checkDifficulty(tourney, note) and tourney.date > today \
-			   and surfDist(6371008.8, coord1, coord2) < note.radius:
+			   and surfDist(6371008.8, coord1, coord2) < radius_m:
 				# correct difficlty, in the future, and within range
 				if note.email not in toSend: toSend[note.email] = set()
 				toSend[note.email].add(tourney)

@@ -1,7 +1,6 @@
 <html>
   <head>
     <title>QBNotify</title>
-    
     <link rel="apple-touch-icon" sizes="57x57" href="/static/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="/static/apple-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="/static/apple-icon-72x72.png">
@@ -21,7 +20,7 @@
     <meta name="theme-color" content="#ffffff">
   </head>
   <body>
-    You are logged in as {{email}} .
+    You are logged in as {{email}}.
     <br />
     Click <a href="/logout">here</a> to log out.
     <hr />
@@ -37,7 +36,14 @@
       <input type="checkbox" name="level" value="trash"> Trash
       <br />
       <br />
-      tournaments within <input type="text" name="r"> meters of the following location:
+      tournaments within <input type="text" name="r">
+      <select name="unit">
+	<option value="mi">mi</option>
+	<option value="ft">ft</option>
+	<option value="km">km</option>
+	<option value="m">m</option>
+      </select>
+      of the following location:
       <br />
       <br />
       Latitude: <input type="text" name="lat">

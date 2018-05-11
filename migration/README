@@ -1,0 +1,17 @@
+So, I occasionally need to change the DB schema when adding new features. The
+scripts in here allow you to migrate the DB to new versions. You should run them
+in order, starting with the number corresponding to your current schema.
+Obviously, you should back up the DB before attempting to migrate.
+
+Perhaps I should have used NoSQL (it would probably get me some street cred),
+but Flask has great SQL integration and I was lazy.
+
+List of the changes for each migration script:
+
+
+mig1.sql
+--------------------------------
+Introduced 2018-05-10
+Last commit before change: ce49865b30da1fe0b44c52a6999bdff3b19e8dd2
+User can now specify units for the radius of a circular region
+--------------------------------
