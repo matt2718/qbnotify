@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 
 import json
+import logging
 import math
 import re
 import requests
 import sys
+
 from datetime import datetime
 
 from bs4 import BeautifulSoup
@@ -21,7 +23,7 @@ class Tournament:
 	id = None
 
 def geocode(address):
-	print('LOG: Google maps query: ' + address)
+	logging.info('Google maps query: ' + address)
 	baseURL = 'https://maps.googleapis.com/maps/api/geocode/json'
 	reqURL = baseURL\
 	         + '?address=' + address.replace(' ', '+')\
@@ -30,15 +32,16 @@ def geocode(address):
 	# do query and check for errors
 	resp = requests.get(reqURL)
 	if resp.status_code != 200:
-		print('ERROR: GEOCODING HTTP status code ' + str(resp.status_code))
-		print('(Query was ' + reqURL + ')')
+		logging.error('geocoding API returned HTTP status code '\
+		              + str(resp.status_code)\
+		              + ' (query was ' + reqURL + ')')
 		return None
 
 	# make sure geocoding was succesful
 	retObj = json.loads(resp.text)
 	if retObj['status'] != 'OK':
-		print('ERROR: GEOCODING API returned ' + retObj['status'])
-		print('(Query was ' + reqURL + ')')
+		logging.warning('geocoding API returned ' + retObj['status']\
+		                + ' (query was ' + reqURL + ')')
 		return None
 
 	# get coordinates
@@ -85,16 +88,16 @@ def getTournament(tid):
 	
 	resp = requests.get('http://hsquizbowl.org/db/tournaments/' + str(tid))
 	if resp.status_code != 200:
-		print('ERROR: could not get tournament ' + str(tid)\
-		      + ' from HSQB. HTTP status code '\
-		      + str(resp.status_code))
+		logging.error('could not get tournament ' + str(tid)\
+		              + ' from HSQB. HTTP status code '\
+		              + str(resp.status_code))
 		return None
 
 	soup = BeautifulSoup(resp.text)
 
 	# tournament does not exist
 	if soup.select_one('.FBError'):
-		print('LOG: tournament ' + str(tid) + ' does not exist')
+		logging.info('tournament ' + str(tid) + ' does not exist')
 		return None
 
 	# tournament name is in first h2 in heading
@@ -105,7 +108,7 @@ def getTournament(tid):
 	datesplit = ldate.split(' tournament on ')
 	if len(datesplit) < 2:
 		# not listed, we can't use this
-		print('WARNING: level or date not listed for tournament '\
+		logging.warn('level or date not listed for tournament '\
 		      + str(tid) + '; ignoring')
 		return None
 	[level, datestr] = datesplit
@@ -124,31 +127,34 @@ def getTournament(tid):
 	fnames = soup.select('.FieldName')
 	addrs = [f.parent for f in fnames if f.text == 'Address:']
 	locs = [f.parent for f in fnames if f.text == 'Host location:']
+
+	if locs: hloc = locs[0].text.replace('Host location: ', '')
+	else: hloc = ''
+
 	if addrs:
 		# has an 'Address' field
 		addr = addrs[0].text.replace('Address: ', '')
-
 	elif locs:
 		# otherwise, we use the 'Host location' field
-		addr = locs[0].text.replace('Host location: ', '')
-
+		addr = hloc
+		
 		# ignore tournaments without fixed dates
 		if addr.lower() in ['tba', 'to be announced', 'undetermined',
 		                    'unknown']:
-			print('WARNING: the location of tournament ' + str(tid)\
-			      + ' is TBA; ignoring')
+			logging.warn('the location of tournament ' + str(tid)\
+			             + ' is TBA; ignoring')
 			return None
 		
 		# ignore tournaments in multiple locations
 		if addr.lower() in ['various', 'multiple']:
-			print('WARNING: tournament ' + str(tid)\
-			      + ' is in multiple locations; ignoring')
+			logging.info('tournament ' + str(tid)\
+			             + ' is in multiple locations; ignoring')
 			return None
 
 		# ignore online tournaments
 		if addr.lower() in ['internet', 'the internet', 'online', 'cloud',
 		                    'the cloud', 'skype', 'discord']:
-			print('LOG: tournament ' + str(tid) + ' is online; ignoring')
+			logging.info('tournament ' + str(tid) + ' is online; ignoring')
 			return None
 	else:
 		addr = ''
@@ -175,18 +181,22 @@ def getTournament(tid):
 		# no GPX data found, let's geocode it ourselves
 		if not addr:
 			# no location, this tournament is useless to us
-			print('WARNING: location not available for tournament '\
-			      + str(tid) + '; ignoring')
+			logging.warn('location not available for tournament '\
+			             + str(tid) + '; ignoring')
 			return None
 		
 		# we now have an address string, which we can try to geocode
 		location = geocode(addr)
+		if not location and hloc and hloc != addr:
+			# 'Address' gc failed, try 'Host Location' as a last resort
+			location = geocode(hloc)
+
 		if location:
 			[lat, lon, place] = location
 		else:
 			# geocoding failed, we can't find the location
-			print('WARNING: geocoding failed for tournament '\
-			      + str(tid) + '; ignoring')
+			logging.warn('geocoding failed for tournament '\
+			             + str(tid) + '; ignoring')
 			return None
 
 	tourney.state = place
@@ -196,8 +206,8 @@ def getTournament(tid):
 	try:
 		tourney.date = datetime.strptime(datestr, '%B %d, %Y')
 	except ValueError:
-		print('WARNING: malformed date for tournament ' + str(tid)\
-		      + '; ignoring')
+		logging.warn('malformed date for tournament ' + str(tid)\
+		             + '; ignoring')
 		return None
 		
 	return tourney
@@ -205,8 +215,8 @@ def getTournament(tid):
 def getAllTournaments(start=1, end=1000000000):
 	resp = requests.get('http://hsquizbowl.org/db/tournaments/dbstats.php')
 	if resp.status_code != 200:
-		print('ERROR: could not get DB stats from HSQB. HTTP status code '\
-		      + str(resp.status_code))
+		logging.error('could not get DB stats from HSQB. HTTP status code '\
+		              + str(resp.status_code))
 		return []
 
 	maxID = int(re.search(r'(?<=max=)[0-9]+', resp.text).group(0))
@@ -218,10 +228,10 @@ def getAllTournaments(start=1, end=1000000000):
 			# user pressed ctrl-C, exit immediately
 			raise
 		except:
-			print('ERROR: parser failed on tournament ' + str(tid))
+			logging.error('parser failed on tournament ' + str(tid))
 		else:
 			if info:
-				print('LOG: got tournament ' + str(tid))
+				logging.info('got tournament ' + str(tid))
 				yield info
 
 if __name__ == '__main__':

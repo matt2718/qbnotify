@@ -25,13 +25,18 @@ if resp.status_code != 200:
 	print('ERROR: server returned status code ' + str(resp.status_code))
 	quit(1)
 
-newlast = resp.text.split()[-1]
+ids = resp.text.split()
+newlast = ids[-1]
+
 try:
 	int(newlast)
 except ValueError:
 	print('ERROR: server did not return an integer value')
 	quit(1)
 
+for i in ids:
+	print('got ' + str(i))
+	
 # record last tournament parsed
 f = open('lastID', 'w')
 f.write(newlast + '\n')
