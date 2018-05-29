@@ -173,10 +173,24 @@ def home():
 @login_required
 def addCoord():
 	if request.form:
+		# get coordinates (need to handle addresses seperately)
+		if request.form['addrbut']:
+			if not request.form['addr']:
+				return redirect('/')
+			place = scraper.geocode(request.form['addr'])
+			if not place:
+				return redirect('/')
+			latstr, lonstr, tmp = place
+		elif request.form['coordbut']:
+			latstr = float(request.form['lat'])
+			lonstr = float(request.form['lon'])
+		else:
+			return redirect('/')
+
 		# validate input
 		try:
-			lat = float(request.form['lat'])
-			lon = float(request.form['lon'])
+			lat = float(latstr)
+			lon = float(lonstr)
 			radius = float(request.form['r'])
 			unit = request.form['unit']
 

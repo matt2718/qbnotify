@@ -19,11 +19,13 @@
     <meta name="msapplication-TileImage" content="/static/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
   </head>
+
   <body>
     You are logged in as {{email}}.
     <br />
     Click <a href="/logout">here</a> to log out.
     <hr />
+
     <h2>Add Notification (circular region):</h2>
     <form method="POST" action="/addCoord">
       Notify me of all
@@ -46,18 +48,22 @@
       of the following location:
       <br />
       <br />
+      Address: <input type="text" name="addr">
+      <input type="submit" name="addrbut" value="Add">
+      <br />
+      <br />
+      or
+      <br />
+      <br />
       Latitude: <input type="text" name="lat">
       <br />
       Longitude: <input type="text" name="lon">
-      <br />
-      <br />
-      <input type="submit" value="Add">
+      <input type="submit" name="coordbut" value="Add">
     </form>
-
     <hr />
 
     <form method="POST" action="/addState">
-      <h2>Add Notification (state or provice):</h2>
+      <h2>Add Notification (state or province):</h2>
       Notify me of all
       <br />
       <br />
