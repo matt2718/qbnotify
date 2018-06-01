@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 
-import os
-import math
 import html
+import logging
+import math
+import os
+
 from datetime import datetime, timedelta
 
 from flask import Flask, render_template, request, redirect, Response, \
@@ -21,26 +23,10 @@ import scraper
 import mysecrets
 from constants import states
 
-# finds great-circle distance between 2 points on a sphere
-# (Yes, I know the earth is an oblate spheroid, but I'm not going to implement
-#  the full Vincenty formula to give you <0.5% more accurate geodesics. It was
-#  hard enough making sure this was numerically well-conditioned. Just make your
-#  notifcation circle slightly larger if it matters to you.)
-def surfDist(r, latlon1, latlon2):
-	# convert to radians
-	lat1 = latlon1[0] * math.pi / 180
-	lon1 = latlon1[1] * math.pi / 180
-	lat2 = latlon2[0] * math.pi / 180
-	lon2 = latlon2[1] * math.pi / 180
-
-	# haversine formula
-	# (possibly not super well-conditioned for antipodes, but if you want to
-	#  notified exclusively about non-antipodal tournaments, you have bigger
-	#  problems)
-	tmp = math.sin((lat1 - lat2) / 2)**2 \
-	      + math.cos(lat1) * math.cos(lat2) * math.sin((lon1 - lon2) / 2)**2
-
-	return 2 * r * math.asin(math.sqrt(tmp))
+# set up logging
+logging.basicConfig(filename='logs/qbnotify.log',
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 
 # Create app
 app = Flask(__name__)
@@ -56,8 +42,12 @@ app.config['SECRET_KEY'] = mysecrets.secret_key
 # this is because flask-security uses stupid naming
 app.config['SECURITY_PASSWORD_SALT'] = '00000'
 
+logging.debug('created flask app')
+
 # Create database connection object
 db = SQLAlchemy(app)
+
+logging.debug('initialized DB connection')
 
 # allow users to create accounts
 app.config['SECURITY_REGISTERABLE'] = True
@@ -78,6 +68,8 @@ app.config['MAIL_PASSWORD'] = mysecrets.mail_password
 app.config['MAIL_DEFAULT_SENDER'] = mysecrets.mail_sender
 app.config['SECURITY_EMAIL_SENDER'] = mysecrets.mail_sender
 mail = Mail(app)
+
+logging.debug('configured mail')
 
 ############################################################
 # COPIED FROM FLASK-SECURITY QUICKSTART GUIDE
@@ -106,6 +98,8 @@ user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
 ############################################################
+
+logging.debug('initialized security model')
 
 class Notification(db.Model):
 	email = db.Column(db.String(255), primary_key=True)
@@ -156,9 +150,9 @@ class Notification(db.Model):
 				+ disp
 		
 		return ''
-		
-tmpnotes = [];
 
+logging.info('started QBNotify')
+	
 @app.before_first_request
 def create_user():
 	db.create_all()
@@ -365,7 +359,7 @@ def scrapeAndNotify(start, end):
 			              html=content,
 			              subject=subj)
 			conn.send(msg)
-			print('LOG: notified user ' + email)
+			logging.info('notified user ' + email)
 
 @app.route('/sn/', methods=['GET'])
 def snFrontend():
@@ -419,6 +413,27 @@ def browserconfig():
 		os.path.join(app.root_path, 'static'),
 		'browserconfig.xml',
 		mimetype='application/xml')
+
+# finds great-circle distance between 2 points on a sphere
+# (Yes, I know the earth is an oblate spheroid, but I'm not going to implement
+#  the full Vincenty formula to give you <0.5% more accurate geodesics. It was
+#  hard enough making sure this was numerically well-conditioned. Just make your
+#  notifcation circle slightly larger if it matters to you.)
+def surfDist(r, latlon1, latlon2):
+	# convert to radians
+	lat1 = latlon1[0] * math.pi / 180
+	lon1 = latlon1[1] * math.pi / 180
+	lat2 = latlon2[0] * math.pi / 180
+	lon2 = latlon2[1] * math.pi / 180
+
+	# haversine formula
+	# (possibly not super well-conditioned for antipodes, but if you want to
+	#  notified exclusively about non-antipodal tournaments, you have bigger
+	#  problems)
+	tmp = math.sin((lat1 - lat2) / 2)**2 \
+	      + math.cos(lat1) * math.cos(lat2) * math.sin((lon1 - lon2) / 2)**2
+
+	return 2 * r * math.asin(math.sqrt(tmp))
 
 if __name__ == '__main__':
 	# this is only for debugging, not deployment

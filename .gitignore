@@ -115,3 +115,6 @@ mysecrets.py
 
 # record of tournament requests
 lastID
+
+# all logs
+logs/
