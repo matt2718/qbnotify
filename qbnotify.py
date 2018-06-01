@@ -124,6 +124,8 @@ class Notification(db.Model):
 
 	state = db.Column(db.String(16), nullable=True)
 
+	dispname = db.Column(db.String(255), nullable=True)
+	
 	def __str__(self):
 		# get tournament levels
 		diffs = []
@@ -143,9 +145,15 @@ class Notification(db.Model):
 		if self.type == 'S':
 			return diffstr + ' tournaments in ' + self.state
 		elif self.type == 'C':
+			if self.dispname:
+				disp = self.dispname +\
+					' (' + str(self.lat) + ', ' + str(self.lon) + ')'
+			else:
+				disp = '(' + str(self.lat) + ', ' + str(self.lon) + ')'
+				
 			return diffstr + ' tournaments within '\
 				+ str(self.radius) + ' ' + str(self.unit) + ' of '\
-				+ '(' + str(self.lat) + ', ' + str(self.lon) + ')'
+				+ disp
 		
 		return ''
 		
@@ -211,6 +219,9 @@ def addCoord():
 		                       type='C',
 		                       lat=lat, lon=lon, radius=radius, unit=unit)
 
+		if request.form['addrbut']:
+			newNote.dispname = request.form['addr']
+		
 		# check which difficulties the person has chosen
 		levels = request.form.getlist('level')
 		if not levels: return redirect('/')
