@@ -56,7 +56,7 @@ def geocode(address):
 		# states not necessary for british tournaments
 		place = 'UK'
 	elif country == 'US' or country == 'CA':
-		# get state
+		# get state or province
 		for x in addrParts:
 			if x['types'][0]=='administrative_area_level_1':
 				place = x['short_name']
@@ -172,8 +172,8 @@ def getTournament(tid):
 		lon = wpt['lon']
 		place = addr2state(addr)
 
-		# if no state is mentioned in address, see if we can geocode it
-		# we try this last to conserve API queries
+		# if no state/province is mentioned in address, see if we can
+		# geocode it. we try this last to conserve API queries
 		if not place:
 			place = geocode(str(lat) + ', ' + str(lon))[2]
 
