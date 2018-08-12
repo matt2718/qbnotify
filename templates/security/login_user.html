@@ -1,41 +1,38 @@
 <html>
   <head>
-    <title>QBNotify</title>
-    
-    <link rel="apple-touch-icon" sizes="57x57" href="/static/apple-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="/static/apple-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="/static/apple-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="/static/apple-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="/static/apple-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="/static/apple-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/static/apple-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/static/apple-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-icon-180x180.png">
-    <link rel="icon" type="image/png" sizes="192x192"  href="/static/android-icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="/static/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <link rel="manifest" href="/static/manifest.json">
-    <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="/static/ms-icon-144x144.png">
-    <meta name="theme-color" content="#ffffff">
+    {% include 'head.html' %}
   </head>
+
   <body>
-    Welcome to QBNotify! Please sign in or create an account to manage your notifications.
-    <hr />
-    {% from "security/_macros.html" import render_field_with_errors, render_field %}
-    <h2>{{ _('Login') }}</h2>
-    <form action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
-      {{ login_user_form.hidden_tag() }}
-      {{ render_field_with_errors(login_user_form.email) }}
-      {{ render_field_with_errors(login_user_form.password) }}
-      {{ render_field_with_errors(login_user_form.remember) }}
-      {{ render_field(login_user_form.next) }}
-      {{ render_field(login_user_form.submit) }}
-    </form>
-    <hr />
-    {% include "security/_menu.html" %}
-    <hr />
-    {% include "security/_messages.html" %}
+    {% include 'header.html' %}
+    <div class="wrapper">
+      <div style="width: 60%; float: left;">
+        <h2>Welcome!</h2>
+
+        Welcome to QBNotify! Here, you can sign up to recieve email notification for every
+        tournament announced on the <a href="http://hsquizbowl.org/db">Quizbowl Resource Center
+          database</a>. More information about the project is available
+        <a href="http://www.hsquizbowl.org/forums/viewtopic.php?f=123&t=21229">here.</a>
+        <br>
+        <br>
+        Please sign in or create an account to manage your notifications.
+      </div>
+      <div style="width: 35%; float: right;">
+        {% from "security/_macros.html" import render_field_with_errors, render_field %}
+        <h2>{{ _('Login') }}</h2>
+        <form action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
+          {{ login_user_form.hidden_tag() }}
+          {{ render_field_with_errors(login_user_form.email) }}
+          {{ render_field_with_errors(login_user_form.password) }}
+          {{ render_field_with_errors(login_user_form.remember) }}
+          {{ render_field(login_user_form.next) }}
+          {{ render_field(login_user_form.submit) }}
+        </form>
+        <a href="{{ url_for_security('register') }}{% if 'next' in request.args %}?next={{
+                 request.args.next|urlencode }}{% endif %}">{{ _('Register') }}</a>
+        <br />
+        <a href="{{ url_for_security('forgot_password') }}">{{ _('Forgot password') }}</a>
+      </div>
+    </div>
   </body>
 </html>

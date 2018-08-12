@@ -4,6 +4,7 @@ import html
 import logging
 import math
 import os
+import sys
 
 from datetime import datetime, timedelta
 
@@ -30,7 +31,7 @@ logging.basicConfig(filename='logs/qbnotify.log',
 
 # Create app
 app = Flask(__name__)
-app.config['DEBUG'] = False
+app.config['DEBUG'] = ('-dbg' in sys.argv[1:])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///qbnotify.db'
 

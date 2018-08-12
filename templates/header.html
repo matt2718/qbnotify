@@ -1,0 +1,12 @@
+<div id="header">
+  <div class="wrapper">
+    <div class="headercont" style="float: left;">
+      <span style="font-size: 18pt;">QBNotify</span>
+    </div>
+    {% if email %}
+      <div class="headercont" style="float: right;">
+	{{email}} | <a href="/logout">Log Out</a>
+      </div>
+    {% endif %}
+  </div>
+</div>

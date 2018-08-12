@@ -1,103 +1,83 @@
 <html>
   <head>
-    <title>QBNotify</title>
-    <link rel="apple-touch-icon" sizes="57x57" href="/static/apple-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="/static/apple-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="/static/apple-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="/static/apple-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="/static/apple-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="/static/apple-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/static/apple-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/static/apple-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-icon-180x180.png">
-    <link rel="icon" type="image/png" sizes="192x192"  href="/static/android-icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="/static/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <link rel="manifest" href="/static/manifest.json">
-    <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="/static/ms-icon-144x144.png">
-    <meta name="theme-color" content="#ffffff">
+    {% include 'head.html' %}
   </head>
 
   <body>
-    You are logged in as {{email}}.
-    <br />
-    Click <a href="/logout">here</a> to log out.
-    <hr />
+    {% include 'header.html' %}
+    <div class="wrapper">
+      <h2>Add Notification (circular region):</h2>
+      <form method="POST" action="/addCoord">
+	Notify me of all
+	<br />
+	<br />
+	<input type="checkbox" name="level" value="ms"> Middle School
+	<input type="checkbox" name="level" value="hs"> High School
+	<input type="checkbox" name="level" value="college"> College
+	<input type="checkbox" name="level" value="open"> Open
+	<input type="checkbox" name="level" value="trash"> Trash
+	<br />
+	<br />
+	tournaments within <input type="text" name="r">
+	<select name="unit">
+	  <option value="mi">mi</option>
+	  <option value="ft">ft</option>
+	  <option value="km">km</option>
+	  <option value="m">m</option>
+	</select>
+	of the following location:
+	<br />
+	<br />
+	Address: <input type="text" name="addr">
+	<input type="submit" name="addrbut" value="Add">
+	<br />
+	<br />
+	or
+	<br />
+	<br />
+	Latitude: <input type="text" name="lat">
+	<br />
+	Longitude: <input type="text" name="lon">
+	<input type="submit" name="coordbut" value="Add">
+      </form>
+      <hr />
 
-    <h2>Add Notification (circular region):</h2>
-    <form method="POST" action="/addCoord">
-      Notify me of all
-      <br />
-      <br />
-      <input type="checkbox" name="level" value="ms"> Middle School
-      <input type="checkbox" name="level" value="hs"> High School
-      <input type="checkbox" name="level" value="college"> College
-      <input type="checkbox" name="level" value="open"> Open
-      <input type="checkbox" name="level" value="trash"> Trash
-      <br />
-      <br />
-      tournaments within <input type="text" name="r">
-      <select name="unit">
-	<option value="mi">mi</option>
-	<option value="ft">ft</option>
-	<option value="km">km</option>
-	<option value="m">m</option>
-      </select>
-      of the following location:
-      <br />
-      <br />
-      Address: <input type="text" name="addr">
-      <input type="submit" name="addrbut" value="Add">
-      <br />
-      <br />
-      or
-      <br />
-      <br />
-      Latitude: <input type="text" name="lat">
-      <br />
-      Longitude: <input type="text" name="lon">
-      <input type="submit" name="coordbut" value="Add">
-    </form>
-    <hr />
+      <form method="POST" action="/addState">
+	<h2>Add Notification (state, province, or territory):</h2>
+	Notify me of all
+	<br />
+	<br />
+	<input type="checkbox" name="level" value="ms"> Middle School
+	<input type="checkbox" name="level" value="hs"> High School
+	<input type="checkbox" name="level" value="college"> College
+	<input type="checkbox" name="level" value="open"> Open
+	<input type="checkbox" name="level" value="trash"> Trash
+	<br />
+	<br />
+	tournaments in
+	<br />
+	<br />
+	<select name="state">
+	  {% for state in states %}
+	  <option value="{{state[1]}}">{{state[0]}}</option>
+	  {% endfor %}
+	</select> ("UK" and "other" also available)
+	<br />
+	<br />
+	<input type="submit" value="Add">
+      </form>
 
-    <form method="POST" action="/addState">
-      <h2>Add Notification (state, province, or territory):</h2>
-      Notify me of all
-      <br />
-      <br />
-      <input type="checkbox" name="level" value="ms"> Middle School
-      <input type="checkbox" name="level" value="hs"> High School
-      <input type="checkbox" name="level" value="college"> College
-      <input type="checkbox" name="level" value="open"> Open
-      <input type="checkbox" name="level" value="trash"> Trash
-      <br />
-      <br />
-      tournaments in
-      <br />
-      <br />
-      <select name="state">
-	{% for state in states %}
-	<option value="{{state[1]}}">{{state[0]}}</option>
-	{% endfor %}
-      </select> ("UK" and "other" also available)
-      <br />
-      <br />
-      <input type="submit" value="Add">
-    </form>
-
-    <hr />
-    
-    <h2>Your Current Notifications:</h2>
-    
-    {% for note in curNotes %}
-    <form method="POST" action="/delNote">
-      <input type="submit" value="Delete">
-      <input type="hidden" name="id" value="{{note.id}}">
-      {{note}}
-    </form>
-    {% endfor %}
-
+      <hr />
+      
+      <h2>Your Current Notifications:</h2>
+      
+      {% for note in curNotes %}
+      <form method="POST" action="/delNote">
+	<input type="submit" value="Delete">
+	<input type="hidden" name="id" value="{{note.id}}">
+	{{note}}
+      </form>
+      {% endfor %}
+    </div>
   </body>
 </html>
