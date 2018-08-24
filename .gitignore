@@ -118,3 +118,6 @@ lastID
 
 # all logs
 logs/
+
+# spatial data for state boundaries
+static/polygons/

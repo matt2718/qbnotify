@@ -1,14 +1,6 @@
 <html>
   <head>
     {% include 'head.html' %}
-    <style>
-      #map {
-	  height: 600px;
-	  width: 100%;
-	  margin-top: 20px;
-	  margin-bottom: 20px;
-      }
-    </style>
   </head>
 
   <body>
@@ -16,63 +8,63 @@
     <div class="wrapper">
       <h2>Add Notification (circular region):</h2>
       <form method="POST" action="/addCoord">
-	Notify me of all
-	<br />
-	<br />
-	<input type="checkbox" name="level" value="ms"> Middle School
-	<input type="checkbox" name="level" value="hs"> High School
-	<input type="checkbox" name="level" value="college"> College
-	<input type="checkbox" name="level" value="open"> Open
-	<input type="checkbox" name="level" value="trash"> Trash
-	<br />
-	<br />
-	tournaments within <input type="text" name="r">
-	<select name="unit">
-	  <option value="mi">mi</option>
-	  <option value="ft">ft</option>
-	  <option value="km">km</option>
-	  <option value="m">m</option>
-	</select>
-	of the following location:
-	<br />
-	<br />
-	Address: <input type="text" name="addr">
-	<input type="submit" name="addrbut" value="Add">
-	<br />
-	<br />
-	or
-	<br />
-	<br />
-	Latitude: <input type="text" name="lat">
-	<br />
-	Longitude: <input type="text" name="lon">
-	<input type="submit" name="coordbut" value="Add">
+        Notify me of all
+        <br />
+        <br />
+        <input type="checkbox" name="level" value="ms"> Middle School
+        <input type="checkbox" name="level" value="hs"> High School
+        <input type="checkbox" name="level" value="college"> College
+        <input type="checkbox" name="level" value="open"> Open
+        <input type="checkbox" name="level" value="trash"> Trash
+        <br />
+        <br />
+        tournaments within <input type="text" name="r">
+        <select name="unit">
+          <option value="mi">mi</option>
+          <option value="ft">ft</option>
+          <option value="km">km</option>
+          <option value="m">m</option>
+        </select>
+        of the following location:
+        <br />
+        <br />
+        Address: <input type="text" name="addr">
+        <input type="submit" name="addrbut" value="Add">
+        <br />
+        <br />
+        or
+        <br />
+        <br />
+        Latitude: <input type="text" name="lat">
+        <br />
+        Longitude: <input type="text" name="lon">
+        <input type="submit" name="coordbut" value="Add">
       </form>
       <hr />
 
       <form method="POST" action="/addState">
-	<h2>Add Notification (state, province, or territory):</h2>
-	Notify me of all
-	<br />
-	<br />
-	<input type="checkbox" name="level" value="ms"> Middle School
-	<input type="checkbox" name="level" value="hs"> High School
-	<input type="checkbox" name="level" value="college"> College
-	<input type="checkbox" name="level" value="open"> Open
-	<input type="checkbox" name="level" value="trash"> Trash
-	<br />
-	<br />
-	tournaments in
-	<br />
-	<br />
-	<select name="state">
-	  {% for state in states %}
-	  <option value="{{state[1]}}">{{state[0]}}</option>
-	  {% endfor %}
-	</select> ("UK" and "other" also available)
-	<br />
-	<br />
-	<input type="submit" value="Add">
+        <h2>Add Notification (state, province, or territory):</h2>
+        Notify me of all
+        <br />
+        <br />
+        <input type="checkbox" name="level" value="ms"> Middle School
+        <input type="checkbox" name="level" value="hs"> High School
+        <input type="checkbox" name="level" value="college"> College
+        <input type="checkbox" name="level" value="open"> Open
+        <input type="checkbox" name="level" value="trash"> Trash
+        <br />
+        <br />
+        tournaments in
+        <br />
+        <br />
+        <select name="state">
+          {% for state in states %}
+          <option value="{{state[1]}}">{{state[0]}}</option>
+          {% endfor %}
+        </select> ("UK" and "other" also available)
+        <br />
+        <br />
+        <input type="submit" value="Add">
       </form>
 
       <hr />
@@ -85,17 +77,17 @@
       
       {% for note in curNotes %}
       <form method="POST" action="/delNote">
-	<input type="submit" value="Delete">
-	<input type="hidden" name="id" value="{{note.id}}">
-	{% if note.state %}
-	<span class="notify-state" data-state="{{note.state}}">{{note}}</span>
-	{% else %}
-	<span class="notify-circle"
-	      data-lat="{{note.lat}}"
-	      data-lng="{{note.lon}}"
-	      data-radius="{{note.radius}}"
-	      data-unit="{{note.unit}}">{{note}}</span>
-	{% endif %}
+        <input type="submit" value="Delete">
+        <input type="hidden" name="id" value="{{note.id}}">
+        {% if note.state %}
+        <span class="notify-state" data-state="{{note.state}}">{{note}}</span>
+        {% else %}
+        <span class="notify-circle"
+              data-lat="{{note.lat}}"
+              data-lng="{{note.lon}}"
+              data-radius="{{note.radius}}"
+              data-unit="{{note.unit}}">{{note}}</span>
+        {% endif %}
       </form>
       {% endfor %}
     </div>
