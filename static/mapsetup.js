@@ -19,6 +19,8 @@ function initMap() {
       function(elem) { drawState(elem.dataset.state); }
     );
 
+    map.data.setStyle(colorDefaults);
+    
     // circular notifications
     [].forEach.call(
       document.getElementsByClassName('notify-circle'),
@@ -72,11 +74,5 @@ function drawCircle(lat, lng, radius) {
 }
 
 function drawState(abbr) {
-    getJSON(document.location.origin + '/static/polygons/' + abbr + '.json',
-            function(coords) {
-                // draw polygon from coordinates
-                var params = Object.assign({paths: coords}, colorDefaults);
-                var polygon = new google.maps.Polygon(params);
-                polygon.setMap(map);
-            });
+    map.data.loadGeoJson('static/geojson/' + abbr + '.json');
 }
