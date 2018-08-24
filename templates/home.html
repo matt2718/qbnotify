@@ -90,7 +90,11 @@
 	{% if note.state %}
 	<span class="notify-state" data-state="{{note.state}}">{{note}}</span>
 	{% else %}
-	<span class="notify-circle">{{note}}</span>
+	<span class="notify-circle"
+	      data-lat="{{note.lat}}"
+	      data-lng="{{note.lon}}"
+	      data-radius="{{note.radius}}"
+	      data-unit="{{note.unit}}">{{note}}</span>
 	{% endif %}
       </form>
       {% endfor %}
