@@ -27,7 +27,7 @@ def geocode(address):
 	baseURL = 'https://maps.googleapis.com/maps/api/geocode/json'
 	reqURL = baseURL\
 	         + '?address=' + address.replace(' ', '+')\
-	         + '&key=' + mysecrets.maps_api_key
+	         + '&key=' + mysecrets.maps_server_api_key
 
 	# do query and check for errors
 	resp = requests.get(reqURL)

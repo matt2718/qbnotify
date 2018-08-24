@@ -1,6 +1,14 @@
 <html>
   <head>
     {% include 'head.html' %}
+    <style>
+      #map {
+	  height: 600px;
+	  width: 100%;
+	  margin-top: 20px;
+	  margin-bottom: 20px;
+      }
+    </style>
   </head>
 
   <body>
@@ -70,12 +78,20 @@
       <hr />
       
       <h2>Your Current Notifications:</h2>
+
+      <div id="map"></div>
+      <script src="static/mapsetup.js"></script>
+      <script async defer src="https://maps.googleapis.com/maps/api/js?key={{clientkey}}&callback=initMap"></script>
       
       {% for note in curNotes %}
       <form method="POST" action="/delNote">
 	<input type="submit" value="Delete">
 	<input type="hidden" name="id" value="{{note.id}}">
-	{{note}}
+	{% if note.state %}
+	<span class="notify-state" data-state="{{note.state}}">{{note}}</span>
+	{% else %}
+	<span class="notify-circle">{{note}}</span>
+	{% endif %}
       </form>
       {% endfor %}
     </div>

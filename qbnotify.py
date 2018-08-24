@@ -169,7 +169,8 @@ def home():
 	return render_template('home.html',
 	                       states=states,
 	                       curNotes=noteList,
-	                       email=current_user.email)
+	                       email=current_user.email,
+	                       clientkey=mysecrets.maps_client_api_key)
 
 # new coordinate notification added
 @app.route('/addCoord', methods=['POST'])
