@@ -68,8 +68,17 @@
       </form>
 
       <hr />
-      
+
       <h2>Your Current Notifications:</h2>
+      <noscript>
+        <p><i>
+            A map of your notifications could not be displayed because
+            JavaScript is disabled.
+        </i></p>
+        <style>
+          #map {display:none;}
+        </style>
+      </noscript>
 
       <div id="map"></div>
       <script src="static/mapsetup.js"></script>
