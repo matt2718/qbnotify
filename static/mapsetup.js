@@ -51,25 +51,31 @@ function initMap() {
 
     // markers for upcoming tournaments
     getJSON(
-	document.location.origin + '/upcoming.json',
-	function(tournaments) {
-	    icons = {
-		'M': 'https://maps.google.com/mapfiles/marker_greenM.png',
-		'H': 'https://maps.google.com/mapfiles/marker_greenH.png',
-		'C': 'https://maps.google.com/mapfiles/marker_greenC.png',
-		'O': 'https://maps.google.com/mapfiles/marker_greenO.png',
-		'T': 'https://maps.google.com/mapfiles/marker_greenT.png'
-	    };
-	    
-	    var markers = tournaments.map(function(t, i) {
-		new google.maps.Marker({
-		    position: {lat: t.lat, lng: t.lon},
-		    map: map,
-		    title: t.name,
-		    icon: icons[t.level]
-		});
-	    });
-	}	
+        document.location.origin + '/upcoming.json',
+        function(tournaments) {
+            var levelDict = { M: 'Middle school', H: 'High school', C: 'College',
+                              O: 'Open', T: 'Trash' };
+            infWindow = new google.maps.InfoWindow();
+            tournaments.forEach(function(t) {
+                var marker = new google.maps.Marker({
+                    // jiggle so overlapping markers are visible
+                    position: {lat: t.lat + 0.0002 * (Math.random() - 0.5),
+                               lng: t.lon + 0.0002 * (Math.random() - 0.5)},
+                    map: map,
+                    title: t.name,
+                    icon: '/static/markers/' + t.level + '.png'
+                });
+
+                // pull up description when marker is clicked
+                marker.addListener('click', function() {
+                    var cont = '<a href="http://hsquizbowl.org/db/tournaments/'+t.id+'">'
+                        + t.name + '</a><br />'
+                        + levelDict[t.level] + ' tournament on ' + t.date;
+                    infWindow.setContent(cont);
+                    infWindow.open(map, marker);
+                });
+            });
+        }
     );
 }
 
