@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 from flask import Flask, render_template, request, redirect, Response, \
-	send_from_directory, jsonify
+	send_from_directory
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -331,6 +331,12 @@ def scrapeAndNotify(start, end):
 		# we stream to prevent gunicorn from timing out
 		yield str(tourney.id) + '\n'
 	db.session.commit()
+
+	# update upcoming tournaments file
+	tmp = DBTournament.query.filter(DBTournament.date >= today).all()
+	with open('static/upcoming.json', 'w') as outfile:
+		json.dump([t.dictify() for t in tmp], outfile)
+
 	toSend = {}
 
 	# if no new tournaments are present, return start-1
@@ -431,12 +437,6 @@ def snFrontend():
 		end = 1000000000
 
 	return Response(scrapeAndNotify(start, end), mimetype='text/plain')
-
-@app.route('/upcoming.json')
-def upcomingJSON():
-	today = datetime.today()
-	tournaments = DBTournament.query.filter(DBTournament.date >= today).all()
-	return jsonify([t.dictify() for t in tournaments])
 
 # certain static files
 @app.route('/robots.txt')

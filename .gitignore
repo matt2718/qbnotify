@@ -121,3 +121,6 @@ logs/
 
 # spatial data for state boundaries
 static/geojson/
+
+# upcoming tournaments file (generated every night)
+static/upcoming.json

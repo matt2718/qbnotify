@@ -54,7 +54,7 @@ function initMap() {
 
     // markers for upcoming tournaments
     getJSON(
-        document.location.origin + '/upcoming.json',
+        document.location.origin + '/static/upcoming.json',
         function(tournaments) {
             var levelDict = { M: 'Middle school', H: 'High school', C: 'College',
                               O: 'Open', T: 'Trash' };
