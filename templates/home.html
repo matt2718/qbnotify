@@ -6,6 +6,30 @@
   <body>
     {% include 'header.html' %}
     <div class="wrapper">
+      <h2>Upcoming Tournaments:</h2>
+      <noscript>
+        <p><i>
+            A map of your notifications could not be displayed because
+            JavaScript is disabled.
+        </i></p>
+        <style>
+          #map {display:none;}
+        </style>
+      </noscript>
+
+      <div id="map"></div>
+      <script src="static/mapsetup.js"></script>
+      <script async defer src="https://maps.googleapis.com/maps/api/js?key={{clientkey}}&callback=initMap"></script>
+      <form>
+        Show:
+        <input type="checkbox" name="M" onchange="checkFunc(this);" checked>Middle school</input>
+        <input type="checkbox" name="H" onchange="checkFunc(this);" checked>High school</input>
+        <input type="checkbox" name="C" onchange="checkFunc(this);" checked>College</input>
+        <input type="checkbox" name="O" onchange="checkFunc(this);" checked>Open</input>
+        <input type="checkbox" name="T" onchange="checkFunc(this);" checked>Trash</input>
+      </form>
+      <hr />
+      
       <h2>Add Notification (circular region):</h2>
       <form method="POST" action="/addCoord">
         Notify me of all
@@ -70,20 +94,6 @@
       <hr />
 
       <h2>Your Current Notifications:</h2>
-      <noscript>
-        <p><i>
-            A map of your notifications could not be displayed because
-            JavaScript is disabled.
-        </i></p>
-        <style>
-          #map {display:none;}
-        </style>
-      </noscript>
-
-      <div id="map"></div>
-      <script src="static/mapsetup.js"></script>
-      <script async defer src="https://maps.googleapis.com/maps/api/js?key={{clientkey}}&callback=initMap"></script>
-      
       {% for note in curNotes %}
       <form method="POST" action="/delNote">
         <input type="submit" value="Delete">

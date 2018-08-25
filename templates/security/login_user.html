@@ -6,6 +6,21 @@
   <body>
     {% include 'header.html' %}
     <div class="wrapper">
+            <h2>Upcoming Tournaments:</h2>
+      <div id="map"></div>
+      <script src="static/mapsetup.js"></script>
+      <script async defer src="https://maps.googleapis.com/maps/api/js?key={{clientkey}}&callback=initMap"></script>
+      <form>
+        Show:
+        <input type="checkbox" name="M" onchange="checkFunc(this);" checked>Middle school</input>
+        <input type="checkbox" name="H" onchange="checkFunc(this);" checked>High school</input>
+        <input type="checkbox" name="C" onchange="checkFunc(this);" checked>College</input>
+        <input type="checkbox" name="O" onchange="checkFunc(this);" checked>Open</input>
+        <input type="checkbox" name="T" onchange="checkFunc(this);" checked>Trash</input>
+      </form>
+
+      <hr />
+
       <div style="width: 60%; float: left;">
         <h2>Welcome!</h2>
 
@@ -33,6 +48,7 @@
         <br />
         <a href="{{ url_for_security('forgot_password') }}">{{ _('Forgot password') }}</a>
       </div>
+      <div style="clear:both;"><br /></div>
     </div>
   </body>
 </html>

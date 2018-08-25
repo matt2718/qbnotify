@@ -6,13 +6,16 @@ colorDefaults = {
     fillOpacity: 0.3
 };
 
+// map markers for each level of tournament
+markerSublists = { M: [], H: [], C: [], O: [], T: [] };
+
 function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
         zoom: 4,
         center: {lat: 40.0, lng: -96.0},
         mapTypeId: 'roadmap'
     });
-
+    
     // state notifications
     [].forEach.call(
       document.getElementsByClassName('notify-state'),
@@ -55,6 +58,7 @@ function initMap() {
         function(tournaments) {
             var levelDict = { M: 'Middle school', H: 'High school', C: 'College',
                               O: 'Open', T: 'Trash' };
+
             infWindow = new google.maps.InfoWindow();
             tournaments.forEach(function(t) {
                 var marker = new google.maps.Marker({
@@ -65,6 +69,8 @@ function initMap() {
                     title: t.name,
                     icon: '/static/markers/' + t.level + '.png'
                 });
+
+                markerSublists[t.level].push(marker);
 
                 // pull up description when marker is clicked
                 marker.addListener('click', function() {
@@ -95,8 +101,8 @@ function getJSON(url, callback) {
 
 function drawCircle(lat, lng, radius) {
     var params = Object.assign({
-      center: {lat: lat, lng: lng},
-        radius: radius
+        center: {lat: lat, lng: lng},
+        radius: radius,
     }, colorDefaults);
     var circle = new google.maps.Circle(params);
     circle.setMap(map);
@@ -104,4 +110,9 @@ function drawCircle(lat, lng, radius) {
 
 function drawState(abbr) {
     map.data.loadGeoJson('static/geojson/' + abbr + '.json');
+}
+
+function checkFunc(box) {
+    var markers = markerSublists[box.getAttribute('name')];
+    markers.forEach(function(m) { m.setVisible(box.checked); });
 }

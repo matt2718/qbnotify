@@ -32,6 +32,5 @@ body {
 #map {
     height: 600px;
     width: 100%;
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
 }
