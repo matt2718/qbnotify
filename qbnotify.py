@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import html
+import json
 import logging
 import math
 import os
@@ -9,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 from flask import Flask, render_template, request, redirect, Response, \
-	send_from_directory
+	send_from_directory, jsonify
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -25,9 +26,13 @@ import mysecrets
 from constants import states
 
 # set up logging
-logging.basicConfig(filename='logs/qbnotify.log',
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+if '-dbg' in sys.argv[1:]:
+	logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
+	                    level=logging.DEBUG)
+else:
+	logging.basicConfig(filename='logs/qbnotify.log',
+	                    format='%(asctime)s - %(levelname)s - %(message)s',
+	                    level=logging.INFO)
 
 # Create app
 app = Flask(__name__)
@@ -102,6 +107,7 @@ security = Security(app, user_datastore)
 
 logging.debug('initialized security model')
 
+# represents a single alert setting for the user
 class Notification(db.Model):
 	email = db.Column(db.String(255), primary_key=True)
 	id = db.Column(db.Integer(), primary_key=True)
@@ -152,8 +158,38 @@ class Notification(db.Model):
 		
 		return ''
 
-logging.info('started QBNotify')
+# DB listing for tournaments (SQL wrapper for Tournament class in scraper.py)
+class DBTournament(db.Model):
+	id = db.Column(db.Integer(), primary_key=True)
+	name = db.Column(db.String(256))
+	date = db.Column(db.DateTime())
+	level = db.Column(db.String(8))
+	state = db.Column(db.String(16))
+	lat = db.Column(db.Float())
+	lon = db.Column(db.Float())
+
+	def __init__(self, tourney):
+		self.id = tourney.id
+		self.name = tourney.name
+		self.date = tourney.date
+		self.level = tourney.level
+		self.state = tourney.state
+		self.lat = tourney.position[0]
+		self.lon = tourney.position[1]
+
+	def dictify(self):
+		return {
+			'id': self.id,
+			'name': self.name,
+			'date': self.date.strftime('%Y-%m-%d'),
+			'level': self.level,
+			'state': self.state,
+			'lat': self.lat,
+			'lon': self.lon
+		}
 	
+logging.info('started QBNotify')
+
 @app.before_first_request
 def create_user():
 	db.create_all()
@@ -286,19 +322,21 @@ def checkDifficulty(tournament, notification):
 def scrapeAndNotify(start, end):
 	# get tournaments and setup email list
 	tournaments = []
-	for t in scraper.getAllTournaments(start=start, end=end):
-		tournaments.append(t)
-		yield str(t.id) + '\n'
+	today = datetime.today()
+	for tourney in scraper.getAllTournaments(start=start, end=end):
+		tournaments.append(tourney)
+		if tourney.date > today:
+			db.session.add(DBTournament(tourney))
+		# client gets a list of tournament IDs
+		# we stream to prevent gunicorn from timing out
+		yield str(tourney.id) + '\n'
+	db.session.commit()
 	toSend = {}
 
 	# if no new tournaments are present, return start-1
 	if not tournaments:
-		# client gets a list of tournament IDs
-		# we stream to prevent gunicorn from timing out
 		yield str(start-1)
 		return
-	
-	today = datetime.today()
 	
 	# get area notifications
 	circNotes = Notification.query.filter_by(type='C').all()
@@ -363,6 +401,7 @@ def scrapeAndNotify(start, end):
 			conn.send(msg)
 			logging.info('notified user ' + email)
 
+# authenticate and call scrapeAndNotify
 @app.route('/sn/', methods=['GET'])
 def snFrontend():
 	# validate query string
@@ -392,6 +431,10 @@ def snFrontend():
 		end = 1000000000
 
 	return Response(scrapeAndNotify(start, end), mimetype='text/plain')
+
+@app.route('/upcoming.json')
+def upcomingJSON():
+	return jsonify([t.dictify() for t in DBTournament.query.all()])
 
 # certain static files
 @app.route('/robots.txt')

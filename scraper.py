@@ -15,12 +15,12 @@ import mysecrets
 from constants import states
 
 class Tournament:
+	id = None
 	name = None
 	date = None
 	level = None
 	state = None
 	position = None
-	id = None
 
 def geocode(address):
 	logging.info('Google maps query: ' + address)
@@ -93,7 +93,7 @@ def getTournament(tid):
 		              + str(resp.status_code))
 		return None
 
-	soup = BeautifulSoup(resp.text)
+	soup = BeautifulSoup(resp.text, features="html.parser")
 
 	# tournament does not exist
 	if soup.select_one('.FBError'):
@@ -162,7 +162,7 @@ def getTournament(tid):
 	# check if coordinates are listed
 	respGPX = requests.get('http://hsquizbowl.org/db/tournaments/'\
 	                       + str(tid) + '/gpx')
-	soupGPX = BeautifulSoup(respGPX.text)
+	soupGPX = BeautifulSoup(respGPX.text, features="html.parser")
 	
 	wpt = soupGPX.select_one('wpt')
 
