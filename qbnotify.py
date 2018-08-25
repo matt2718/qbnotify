@@ -434,7 +434,9 @@ def snFrontend():
 
 @app.route('/upcoming.json')
 def upcomingJSON():
-	return jsonify([t.dictify() for t in DBTournament.query.all()])
+	today = datetime.today()
+	tournaments = DBTournament.query.filter(DBTournament.date >= today).all()
+	return jsonify([t.dictify() for t in tournaments])
 
 # certain static files
 @app.route('/robots.txt')
