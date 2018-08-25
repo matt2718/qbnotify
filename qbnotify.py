@@ -396,7 +396,8 @@ def scrapeAndNotify(start, end):
 				content += tourney.date.isoformat().split('T')[0]
 
 			content += '<br /><br />'
-			content += 'You can edit your notification settings at '
+			content += 'You can edit your notification settings '
+			content += 'or view a map of all upcoming tournaments at '
 			content += '<a href="https://qbnotify.msmitchell.org">'
 			content += 'qbnotify.msmitchell.org'
 			content += '</a>.'
