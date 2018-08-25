@@ -48,6 +48,29 @@ function initMap() {
           );
       }
     );
+
+    // markers for upcoming tournaments
+    getJSON(
+	document.location.origin + '/upcoming.json',
+	function(tournaments) {
+	    icons = {
+		'M': 'https://maps.google.com/mapfiles/marker_greenM.png',
+		'H': 'https://maps.google.com/mapfiles/marker_greenH.png',
+		'C': 'https://maps.google.com/mapfiles/marker_greenC.png',
+		'O': 'https://maps.google.com/mapfiles/marker_greenO.png',
+		'T': 'https://maps.google.com/mapfiles/marker_greenT.png'
+	    };
+	    
+	    var markers = tournaments.map(function(t, i) {
+		new google.maps.Marker({
+		    position: {lat: t.lat, lng: t.lon},
+		    map: map,
+		    title: t.name,
+		    icon: icons[t.level]
+		});
+	    });
+	}	
+    );
 }
 
 // JSON XHR wrapper for convenience
