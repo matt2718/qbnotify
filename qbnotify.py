@@ -326,7 +326,7 @@ def scrapeAndNotify(start, end):
 	for tourney in scraper.getAllTournaments(start=start, end=end):
 		tournaments.append(tourney)
 		if tourney.date > today:
-			db.session.add(DBTournament(tourney))
+			db.session.merge(DBTournament(tourney))
 		# client gets a list of tournament IDs
 		# we stream to prevent gunicorn from timing out
 		yield str(tourney.id) + '\n'

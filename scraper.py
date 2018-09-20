@@ -219,8 +219,12 @@ def getAllTournaments(start=1, end=1000000000):
 		              + str(resp.status_code))
 		return []
 
-	maxID = int(re.search(r'(?<=max=)[0-9]+', resp.text).group(0))
-	
+	try:
+		maxID = int(re.search(r'(?<=max=)[0-9]+', resp.text).group(0))
+	except:
+		logging.error('could not parse DB stats from HSQB')
+		return []
+
 	for tid in range(max(start,1), min(end,maxID) + 1):
 		try:
 			info = getTournament(tid)
