@@ -195,6 +195,12 @@ def create_user():
 	db.create_all()
 	db.session.commit()
 
+
+# make necessary parameters available for login page
+@security.context_processor
+def security_context_processor():
+	return dict(clientkey=mysecrets.maps_client_api_key)
+	
 # Views
 @app.route('/', methods=['GET', 'POST'])
 @login_required
