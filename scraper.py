@@ -134,6 +134,11 @@ def getTournament(tid):
 	if addrs:
 		# has an 'Address' field
 		addr = addrs[0].text.replace('Address: ', '')
+		# ignore online tournaments
+		if addr.lower() in ['internet', 'the internet', 'online', 'cloud',
+		                    'the cloud', 'skype', 'discord', 'zoom']:
+			logging.info('tournament ' + str(tid) + ' is online; ignoring')
+			return None
 	elif locs:
 		# otherwise, we use the 'Host location' field
 		addr = hloc
@@ -153,7 +158,7 @@ def getTournament(tid):
 
 		# ignore online tournaments
 		if addr.lower() in ['internet', 'the internet', 'online', 'cloud',
-		                    'the cloud', 'skype', 'discord']:
+		                    'the cloud', 'skype', 'discord', 'zoom']:
 			logging.info('tournament ' + str(tid) + ' is online; ignoring')
 			return None
 	else:
