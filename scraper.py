@@ -138,6 +138,8 @@ def getTournament(tid):
 		if addr.lower() in ['internet', 'the internet', 'online', 'cloud',
 		                    'the cloud', 'skype', 'discord', 'zoom']:
 			logging.info('tournament ' + str(tid) + ' is online; ignoring')
+			# someone put "online" in address field, not location
+			logging.info('god dammit, joe!')
 			return None
 	elif locs:
 		# otherwise, we use the 'Host location' field
