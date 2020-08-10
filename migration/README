@@ -13,5 +13,20 @@ mig1.sql
 --------------------------------
 Introduced 2018-05-10
 Last commit before change: ce49865b30da1fe0b44c52a6999bdff3b19e8dd2
-User can now specify units for the radius of a circular region
+User can now specify units for the radius of a circular region.
+--------------------------------
+
+mig2.sql
+--------------------------------
+Introduced 2018-05-31
+Last commit before change: 8ec3d1ae6936086ebb5e6ed1ac09fae9af4d8d6d
+Entered address is now stored for circular notifications.
+--------------------------------
+
+online-bugfix.sql
+--------------------------------
+Introduced 2018-05-31
+Last commit before change: 033902d117df2ee2db248f97d2d2c32dd84d532e
+Removes tournaments with bad addresses from when "Online" was passed to
+geocoding API. Actual numbers were generated grepping through log.
 --------------------------------

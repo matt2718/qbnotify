@@ -134,6 +134,13 @@ def getTournament(tid):
 	if addrs:
 		# has an 'Address' field
 		addr = addrs[0].text.replace('Address: ', '')
+		# ignore online tournaments
+		if addr.lower() in ['internet', 'the internet', 'online', 'cloud',
+		                    'the cloud', 'skype', 'discord', 'zoom']:
+			logging.info('tournament ' + str(tid) + ' is online; ignoring')
+			# someone put "online" in address field, not location
+			logging.info('god dammit, joe!')
+			return None
 	elif locs:
 		# otherwise, we use the 'Host location' field
 		addr = hloc
@@ -151,6 +158,11 @@ def getTournament(tid):
 			             + ' is in multiple locations; ignoring')
 			return None
 
+		# ignore online tournaments
+		if addr.lower() in ['internet', 'the internet', 'online', 'cloud',
+		                    'the cloud', 'skype', 'discord', 'zoom']:
+			logging.info('tournament ' + str(tid) + ' is online; ignoring')
+			return None
 	else:
 		addr = ''
 	
@@ -219,8 +231,12 @@ def getAllTournaments(start=1, end=1000000000):
 		              + str(resp.status_code))
 		return []
 
-	maxID = int(re.search(r'(?<=max=)[0-9]+', resp.text).group(0))
-	
+	try:
+		maxID = int(re.search(r'(?<=max=)[0-9]+', resp.text).group(0))
+	except:
+		logging.error('could not parse DB stats from HSQB')
+		return []
+
 	for tid in range(max(start,1), min(end,maxID) + 1):
 		try:
 			info = getTournament(tid)
