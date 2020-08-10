@@ -151,11 +151,6 @@ def getTournament(tid):
 			             + ' is in multiple locations; ignoring')
 			return None
 
-		# ignore online tournaments
-		if addr.lower() in ['internet', 'the internet', 'online', 'cloud',
-		                    'the cloud', 'skype', 'discord']:
-			logging.info('tournament ' + str(tid) + ' is online; ignoring')
-			return None
 	else:
 		addr = ''
 	
@@ -176,7 +171,12 @@ def getTournament(tid):
 		# geocode it. we try this last to conserve API queries
 		if not place:
 			place = geocode(str(lat) + ', ' + str(lon))[2]
-
+	elif addr.lower() in ['internet', 'the internet', 'online', 'cloud',
+	                      'the cloud', 'skype', 'discord']:
+		# online tournament are their own thing
+		lat = 0
+		lon = 0
+		place = 'Online'
 	else:
 		# no GPX data found, let's geocode it ourselves
 		if not addr:

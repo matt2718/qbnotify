@@ -333,10 +333,11 @@ def scrapeAndNotify(start, end):
 	db.session.commit()
 
 	# update upcoming tournaments file
-	tmp = DBTournament.query.filter(DBTournament.date >= today).all()
+	tmp = DBTournament.query.filter(DBTournament.date >= today)\
+	                        .filter(DBTournament.state != 'Online').all()
 	with open('static/upcoming.json', 'w') as outfile:
 		json.dump([t.dictify() for t in tmp], outfile)
-
+		
 	toSend = {}
 
 	# if no new tournaments are present, return start-1
