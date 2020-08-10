@@ -29,6 +29,10 @@
         <input type="checkbox" name="T" onchange="checkFunc(this);" checked>Trash</input>
       </form>
       <hr />
+
+      <h2>Upcoming Online Tournaments:</h2>
+      {% include 'upcoming_online_include.html' %}
+      <hr />
       
       <h2>Add Notification (circular region):</h2>
       <form method="POST" action="/addCoord">
@@ -85,7 +89,7 @@
           {% for state in states %}
           <option value="{{state[1]}}">{{state[0]}}</option>
           {% endfor %}
-        </select> ("UK" and "other" also available)
+        </select> ("Online", "UK", "other", also available)
         <br />
         <br />
         <input type="submit" value="Add">

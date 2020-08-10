@@ -134,13 +134,6 @@ def getTournament(tid):
 	if addrs:
 		# has an 'Address' field
 		addr = addrs[0].text.replace('Address: ', '')
-		# ignore online tournaments
-		if addr.lower() in ['internet', 'the internet', 'online', 'cloud',
-		                    'the cloud', 'skype', 'discord', 'zoom']:
-			logging.info('tournament ' + str(tid) + ' is online; ignoring')
-			# someone put "online" in address field, not location
-			logging.info('god dammit, joe!')
-			return None
 	elif locs:
 		# otherwise, we use the 'Host location' field
 		addr = hloc
@@ -156,12 +149,6 @@ def getTournament(tid):
 		if addr.lower() in ['various', 'multiple']:
 			logging.info('tournament ' + str(tid)\
 			             + ' is in multiple locations; ignoring')
-			return None
-
-		# ignore online tournaments
-		if addr.lower() in ['internet', 'the internet', 'online', 'cloud',
-		                    'the cloud', 'skype', 'discord', 'zoom']:
-			logging.info('tournament ' + str(tid) + ' is online; ignoring')
 			return None
 	else:
 		addr = ''
@@ -184,7 +171,7 @@ def getTournament(tid):
 		if not place:
 			place = geocode(str(lat) + ', ' + str(lon))[2]
 	elif addr.lower() in ['internet', 'the internet', 'online', 'cloud',
-	                      'the cloud', 'skype', 'discord']:
+	                      'the cloud', 'skype', 'discord', 'zoom']:
 		# online tournament are their own thing
 		lat = 0
 		lon = 0

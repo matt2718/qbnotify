@@ -144,7 +144,10 @@ class Notification(db.Model):
 		else: diffstr = ' '.join(diffs)
 
 		if self.type == 'S':
-			return diffstr + ' tournaments in ' + self.state
+			if self.state == 'Online':
+				return 'Online ' + diffstr + ' tournaments'
+			else:
+				return diffstr + ' tournaments in ' + self.state
 		elif self.type == 'C':
 			if self.dispname:
 				disp = self.dispname +\
@@ -187,6 +190,16 @@ class DBTournament(db.Model):
 			'lat': self.lat,
 			'lon': self.lon
 		}
+
+	def genHTML(self, swap=False):
+		baseURL = 'http://hsquizbowl.org/db/tournaments/'
+		part1 = '<a href="' + baseURL + str(self.id) + '">'
+		part1 += html.escape(self.name) + '</a>'
+		part2 = self.date.isoformat().split('T')[0]
+		if not swap:
+			return part1 + ' on ' + part2
+		else:
+			return part2 + ': ' + part1
 	
 logging.info('started QBNotify')
 
@@ -207,7 +220,6 @@ def security_context_processor():
 def home():
 	noteList = Notification.query.filter_by(email=current_user.email)\
 	                             .order_by(Notification.id).all()
-	
 	return render_template('home.html',
 	                       states=states,
 	                       curNotes=noteList,
@@ -343,7 +355,20 @@ def scrapeAndNotify(start, end):
 	                        .filter(DBTournament.state != 'Online').all()
 	with open('static/upcoming.json', 'w') as outfile:
 		json.dump([t.dictify() for t in tmp], outfile)
-		
+
+	# now for online ones
+	allOnline = DBTournament.query.filter(DBTournament.date >= today)\
+	                              .filter(DBTournament.state == 'Online')
+	fullDiffs = ['Middle School', 'High School', 'College', 'Open', 'Trash']
+	with open('templates/upcoming_online_include.html', 'w') as outfile:
+		for diff in fullDiffs:
+			tmp = allOnline.filter(DBTournament.level == diff[0])\
+			               .order_by(DBTournament.date).all()
+			outfile.write('<h3>' + diff + '</h3>\n')
+			if not tmp:
+				outfile.write('None at this time\n')
+			outfile.write('<br />\n'.join([t.genHTML(True) for t in tmp]))
+			outfile.write('<br />\n')
 	toSend = {}
 
 	# if no new tournaments are present, return start-1
@@ -371,6 +396,9 @@ def scrapeAndNotify(start, end):
 
 		# handle area notifications
 		for note in circNotes:
+			# coords are garbage for online tournaments
+			if tourney.state == 'Online': continue
+			
 			coord1 = (note.lat, note.lon)
 			coord2 = tourney.position
 
@@ -388,19 +416,13 @@ def scrapeAndNotify(start, end):
 
 	# time to actually send the emails
 	subj = 'You have new quizbowl tournament notifications'
-	baseURL = 'http://hsquizbowl.org/db/tournaments/'
 	# optimize for batch sending
 	with app.app_context(), mail.connect() as conn:
 		for email in toSend:
 			content = 'The following tournaments have recently been '\
 			          'posted to the hsquizbowl.org database:<br />'
-
 			for tourney in toSend[email]:
-				content += '<br />'
-				content += '<a href="' + baseURL + str(tourney.id) + '">'
-				content += html.escape(tourney.name)
-				content += '</a> on '
-				content += tourney.date.isoformat().split('T')[0]
+				content += '<br />' + DBTournament(tourney).genHTML()
 
 			content += '<br /><br />'
 			content += 'You can edit your notification settings '
