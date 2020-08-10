@@ -40,6 +40,9 @@ app.config['DEBUG'] = ('-dbg' in sys.argv[1:])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///qbnotify.db'
 
+# reload included file when it changes
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+
 # this shouldn't be tracked by git
 # just put secret_key = '<SOME RANDOM BYTES>' in the file mysecrets.py
 app.config['SECRET_KEY'] = mysecrets.secret_key

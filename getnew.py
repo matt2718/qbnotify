@@ -16,9 +16,9 @@ except ValueError:
 	quit(1)
 
 # tell server to parse tournaments and notify people
-qstring  = '?key=' + mysecrets.admin_key
-qstring += '&start=' + str(last + 1)
-resp = requests.get('http://localhost:5000/sn' + qstring)
+url = 'http://localhost:' + str(mysecrets.local_port) + '/sn'
+url += '?key=' + mysecrets.admin_key + '&start=' + str(last + 1)
+resp = requests.get(url)
 
 # validate response
 if resp.status_code != 200:
