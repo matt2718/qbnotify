@@ -23,6 +23,13 @@ Last commit before change: 8ec3d1ae6936086ebb5e6ed1ac09fae9af4d8d6d
 Entered address is now stored for circular notifications.
 --------------------------------
 
+mig3.sql
+--------------------------------
+Introduced 2024-05-21
+Last commit before change: 58a9c57ecaa9afe61412b4ccb147d600ddef369e
+Added uniquifier for flask-security update
+--------------------------------
+
 online-bugfix.sql
 --------------------------------
 Introduced 2018-05-31

@@ -1,8 +1,8 @@
-bcrypt
-bs4
-Flask
-Flask-Security
-Flask-SQLAlchemy
-gevent
-gunicorn
-requests
+bcrypt ~= 3.2
+beautifulsoup4 ~= 4.12
+Flask ~= 3.0
+Flask-Security-Too ~= 5.4
+Flask-SQLAlchemy ~= 3.1
+gevent ~= 24.2
+gunicorn ~= 22.0
+requests ~= 2.32

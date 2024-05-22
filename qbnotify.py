@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import html
 import json
@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 from flask import Flask, render_template, request, redirect, Response, \
-	send_from_directory
+	send_from_directory, stream_with_context
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -101,6 +101,7 @@ class User(db.Model, UserMixin):
 	confirmed_at = db.Column(db.DateTime())
 	roles = db.relationship('Role', secondary=roles_users,
 	                        backref=db.backref('users', lazy='dynamic'))
+	fs_uniquifier = db.Column(db.String(64), nullable=False)
 
 # set up Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
@@ -206,11 +207,11 @@ class DBTournament(db.Model):
 	
 logging.info('started QBNotify')
 
-@app.before_first_request
-def create_user():
+# @app.before_first_request
+# def create_user():
+with app.app_context():
 	db.create_all()
 	db.session.commit()
-
 
 # make necessary parameters available for login page
 @security.context_processor
@@ -344,6 +345,7 @@ def scrapeAndNotify(start, end):
 	# get tournaments and setup email list
 	tournaments = []
 	today = datetime.today()
+
 	for tourney in scraper.getAllTournaments(start=start, end=end):
 		tournaments.append(tourney)
 		if tourney.date > today:
@@ -469,7 +471,8 @@ def snFrontend():
 	else:
 		end = 1000000000
 
-	return Response(scrapeAndNotify(start, end), mimetype='text/plain')
+	return Response(stream_with_context(scrapeAndNotify(start, end)),
+                        mimetype='text/plain')
 
 # certain static files
 @app.route('/robots.txt')
